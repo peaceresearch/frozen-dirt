@@ -1,6 +1,8 @@
 chrome = {
 	images = {
-		border = love.graphics.newImage('img/chrome/border.png')
+		border = love.graphics.newImage('img/chrome/border.png'),
+		bomb = love.graphics.newImage('img/chrome/bomb.png'),
+		life = love.graphics.newImage('img/chrome/life.png')
 	}
 }
 
@@ -29,17 +31,23 @@ local function drawScore()
 end
 
 local function drawLives()
-	local x = gameX - grid * 1.5
 	local y = grid * 4.25
-	local livesStr = 'Lives x' .. player.lives
-	drawLabel(livesStr, x - #livesStr * 8, y)
+	local livesStr = 'Lives'
+	drawLabel(livesStr, gameX - grid * 1.5 - #livesStr * 8, y)
+	for i = 1, player.bombs do
+		local x = gameX - grid - grid * 1.5 - 18 * (i - 1)
+		love.graphics.draw(chrome.images.life, x, y + grid + 4)
+	end
 end
 
 local function drawBombs()
 	local x = gameX + gameWidth + grid * 1.5
 	local y = grid * 4.25
-	local livesStr = 'Bombs x' .. player.bombs
-	drawLabel(livesStr, x, y)
+	drawLabel('Bombs', x, y)
+	for i = 1, player.bombs do
+		local x = x + 18 * (i - 1)
+		love.graphics.draw(chrome.images.bomb, x, y + grid + 4)
+	end
 end
 
 local function drawBottom()

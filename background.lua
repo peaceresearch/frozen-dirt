@@ -1,42 +1,41 @@
-pm = require 'playmat'
+local pm = require 'playmat'
 
 background = {
-	imageTypes = {'forest'},
-  currentType = 'forest',
-	images = {},
+	images = {
+		bottom = love.graphics.newImage('img/background/bottom.png'),
+		fadeBottom = love.graphics.newImage('img/background/fadebottom.png'),
+		top = love.graphics.newImage('img/background/top.png'),
+		fadeTop = love.graphics.newImage('img/background/fadetop.png'),
+	},
   bottomStep = 0,
   topStep = 0,
   bottomMeshes = {},
   topMeshes = {},
   tileSize = 64,
 	grass = {},
-	speed = .01,
-	cam = false
+	bottomCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
+	topCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
 }
 
 function background.load()
-	for i, v in ipairs(background.imageTypes) do
-		local name = background.imageTypes[i]
-		-- background.images[name .. 'Fade'] = love.graphics.newImage('img/background/' .. name .. 'fade.png')
-		background.images[name .. 'Bottom'] = love.graphics.newImage('img/background/' .. name .. 'bottom.png')
-		-- background.images[name .. 'Top'] = love.graphics.newImage('img/background/' .. name .. 'top.png')
-	end
 	for type, img in pairs(background.images) do
 		background.images[type]:setFilter('nearest', 'nearest')
 		background.images[type]:setWrap('repeat', 'repeat')
 	end
-	background.cam = pm.newCamera()
-	background.cam:setOffset(1)
-	background.cam:setPosition(0, 0)
-	background.cam:setZoom(1)
-	background.cam:setRotation(0)
-	background.cam:setFov(1)
 end
 
 function background.update()
-
+	local speed = 1.75
+	background.bottomStep = background.bottomStep - speed
+	background.topStep = background.topStep - speed * 1.5
 end
 
 function background.draw()
-	pm.drawPlane(background.cam, background.images[background.currentType .. 'Bottom'])
+	local planeScale = .5
+	pm.drawPlane(background.bottomCam, background.images.bottom, background.bottomStep, 0, planeScale, planeScale, true)
+	love.graphics.draw(background.images.fadeBottom, gameX, gameY)
+	love.graphics.setStencilTest('greater', 0)
+	pm.drawPlane(background.topCam, background.images.top, background.topStep, 0, planeScale, planeScale, true)
+	love.graphics.setStencilTest()
+	love.graphics.draw(background.images.fadeTop, gameX, gameY)
 end

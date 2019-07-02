@@ -7,8 +7,10 @@ gameScale = 1
 grid = 16
 gameWidth = grid * 24
 gameHeight = grid * 28
-gameX = grid * 2
+gameX = winWidth / 2 - gameWidth / 2
 gameY = grid
+
+print(gameWidth, gameHeight)
 
 colors = {
 	black = '140c1c',
@@ -36,13 +38,31 @@ currentScore = 0
 paused = false
 gameOver = false
 started = true
+aniTime = 10
 
 dt = 0
 frameLimit = 1 / 60
 
+mask = love.graphics.newImage('img/masks/mask.png')
+maskShader = love.graphics.newShader[[
+		vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+			if (Texel(texture, texture_coords).rgb == vec3(0.0)) {
+				// a discarded pixel wont be applied as the stencil.
+				discard;
+			}
+			return vec4(1.0);
+		}
+	]]
+function setStencilMask()
+   love.graphics.setShader(maskShader)
+   love.graphics.draw(mask, 0, 0)
+   love.graphics.setShader()
+end
+
 require('controls')
 require('background')
 require('player')
+require('collision')
 require('chrome')
 
 local function setupColors()
@@ -59,6 +79,9 @@ function love.load()
 	love.window.setMode(winWidth * gameScale, winHeight * gameScale)
 	love.graphics.setLineStyle('rough')
 	love.graphics.setLineWidth(1)
+	local font = love.graphics.newFont('fonts/Gold Box 8x16 Monospaced.ttf', 13)
+	font:setFilter('nearest', 'nearest')
+	love.graphics.setFont(font)
 	setupColors()
 	background.load()
 	player.load()
@@ -69,12 +92,21 @@ function love.update(d)
 	controls.update()
 	background.update()
 	player.update()
+	collision.update()
 	chrome.update()
 end
 
 function love.draw()
+	container:renderTo(function()
+		love.graphics.clear()
+	end)
+	love.graphics.setCanvas({container, stencil = true})
+	love.graphics.stencil(setStencilMask, 'replace', 1)
 	background.draw()
 	player.draw()
 	chrome.draw()
+	love.graphics.setCanvas()
+	local windowX = 0
+	love.graphics.draw(container, windowX, 0, 0, gameScale, gameScale)
 	if dt < frameLimit then love.timer.sleep(frameLimit - dt) end
 end

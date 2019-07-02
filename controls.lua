@@ -24,4 +24,5 @@ function controls.update()
 	elseif love.keyboard.isDown('down') then controls.down = true end
 	if love.keyboard.isDown('lshift') or love.keyboard.isDown('rshift') then controls.focus = true end
 	if love.keyboard.isDown('r') then love.event.quit('restart') end
+	if love.keyboard.isDown('z') then controls.shoot = true end
 end

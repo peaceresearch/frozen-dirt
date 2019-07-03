@@ -3,7 +3,7 @@ hc = require 'HC'
 
 winWidth = 640
 winHeight = 480
-gameScale = 2
+gameScale = 1
 grid = 16
 gameWidth = grid * 24
 gameHeight = grid * 28
@@ -62,6 +62,7 @@ end
 require('controls')
 require('background')
 require('player')
+require('enemies')
 require('stage')
 require('collision')
 require('chrome')

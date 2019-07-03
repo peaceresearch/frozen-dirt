@@ -1,7 +1,7 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'redbig'},
+	bulletTypes = {'red', 'redbig', 'blue', 'bluebig'},
 	enemyTypes = {'fairyred'},
 	bulletImages = {},
 	enemyImages = {}
@@ -10,10 +10,8 @@ stage = {
 currentWave = nil
 
 function stage.load()
-	for i = 1, #stage.bulletTypes do stage.bulletImages[type] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
-	for i = 1, #stage.enemyTypes do
-		stage.enemyImages[stage.enemyTypes[i]] = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '.png')
-	end
+	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
+	for i = 1, #stage.enemyTypes do stage.enemyImages[stage.enemyTypes[i]] = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '.png') end
 	for type, img in pairs(stage.bulletImages) do stage.bulletImages[type]:setFilter('nearest', 'nearest') end
 	for type, img in pairs(stage.enemyImages) do stage.enemyImages[type]:setFilter('nearest', 'nearest') end
 end
@@ -76,22 +74,21 @@ end
 
 local function updateBullet(index)
 	local bullet = stage.bullets[index]
-	if bullet.updateFunc then stage.bullets[index].updateFunc(stage.bullets[index]) end
-	if bullet.velocity then
-		bullet.x = bullet.x + bullet.velocity.x
-		bullet.y = bullet.y + bullet.velocity.y
-		bullet:moveTo(bullet.x, bullet.y)
-	end
-	bullet.clock = bullet.clock + 1
-	if bullet.y < -bullet.image:getHeight() / 2 or
-		bullet.y > gameHeight + bullet.image:getHeight() / 2 or
-		bullet.x < -bullet.image:getWidth() / 2 or
-		bullet.x > bullet.image:getWidth() / 2 then
-		hc.remove(bullet)
-		table.remove(stage.bullets, index)
-	elseif stage.killBullets then
-		hc.remove(bullet)
-		table.remove(stage.bullets, index)
+	if bullet then
+		if bullet.updateFunc then stage.bullets[index].updateFunc(stage.bullets[index]) end
+		if bullet.velocity then
+			bullet.x = bullet.x + bullet.velocity.x
+			bullet.y = bullet.y + bullet.velocity.y
+			bullet:moveTo(bullet.x, bullet.y)
+		end
+		bullet.clock = bullet.clock + 1
+		if bullet.y < -bullet.image:getHeight() / 2 or
+			bullet.y > gameHeight + bullet.image:getHeight() / 2 or
+			bullet.x < -bullet.image:getWidth() / 2 or
+			bullet.x > gameWidth + bullet.image:getWidth() / 2 then
+			hc.remove(bullet)
+			table.remove(stage.bullets, index)
+		end
 	end
 end
 

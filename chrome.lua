@@ -68,7 +68,7 @@ local function drawBottom()
 	local y = winHeight - grid - grid / 2
 	local function drawDebug()
 		drawLabel('pshot:' .. #player.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 3 - 8)
-		drawLabel('eshot:000', gameX + gameWidth + grid * 1.5, y - 12 * 2 - 8)
+		drawLabel('eshot:' .. #stage.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 2 - 8)
 		drawLabel('enemy:000', gameX + gameWidth + grid * 1.5, y - 12 - 8)
 	end
 	drawLabel(chrome.fps .. 'FPS', gameX + gameWidth + grid * 1.5, y)

@@ -85,11 +85,8 @@ local function updateBullet(index)
 		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
 			local x, y = enemy:center()
 			if enemy.health <= 0 then
-				explosions.spawn({x = x, y = y}, false, true, true)
 				enemy:moveTo(-gameWidth, - gameHeight)
-				player.score = player.score + .1
 			else
-				explosions.spawn({x = x, y = y}, false, false, true)
 				if enemy and (enemy.health) then enemy.health = enemy.health - 1 end
 			end
 			bullet:moveTo(gameWidth * 3, gameHeight / 2)

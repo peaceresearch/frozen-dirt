@@ -3,7 +3,7 @@ hc = require 'HC'
 
 winWidth = 640
 winHeight = 480
-gameScale = 1
+gameScale = 2
 grid = 16
 gameWidth = grid * 24
 gameHeight = grid * 28
@@ -72,6 +72,10 @@ local function setupColors()
 		_,_,r,g,b,a = colors[color]:find('(%x%x)(%x%x)(%x%x)')
 		colors[color] = {tonumber(r,16) / 255, tonumber(g,16) / 255, tonumber(b,16) / 255, 1}
 	end
+end
+
+function getAngle(b, a)
+	return math.atan2(a.y - b.y, a.x - b.x)
 end
 
 function love.load()

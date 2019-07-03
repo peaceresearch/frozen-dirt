@@ -3,17 +3,15 @@ hc = require 'HC'
 
 winWidth = 640
 winHeight = 480
-gameScale = 1
+gameScale = 2
 grid = 16
 gameWidth = grid * 24
 gameHeight = grid * 28
 gameX = winWidth / 2 - gameWidth / 2
 gameY = grid
 
-print(gameWidth, gameHeight)
-
 colors = {
-	black = '140c1c',
+	black = '222034',
 	purple = '442434',
 	blue = '30346d',
 	grayDark = '4e4a4e',
@@ -26,9 +24,8 @@ colors = {
 	grayLight = '8595a1',
 	greenLight = '6daa2c',
 	peach = 'd2aa99',
-	blueLight = '6dc2ca',
+	blueLight = '5fcde4',
 	yellow = 'dad45e',
-	light = 'deeed6',
 	white = 'ffffff'
 }
 
@@ -42,6 +39,9 @@ aniTime = 10
 
 dt = 0
 frameLimit = 1 / 60
+
+fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
+font = love.graphics.newFont('fonts/goldbox.ttf', 8)
 
 mask = love.graphics.newImage('img/masks/mask.png')
 maskShader = love.graphics.newShader[[
@@ -62,6 +62,7 @@ end
 require('controls')
 require('background')
 require('player')
+require('stage')
 require('collision')
 require('chrome')
 
@@ -79,12 +80,13 @@ function love.load()
 	love.window.setMode(winWidth * gameScale, winHeight * gameScale)
 	love.graphics.setLineStyle('rough')
 	love.graphics.setLineWidth(1)
-	local font = love.graphics.newFont('fonts/Gold Box 8x16 Monospaced.ttf', 13)
 	font:setFilter('nearest', 'nearest')
-	love.graphics.setFont(font)
+	fontBig:setFilter('nearest', 'nearest')
+	love.graphics.setFont(fontBig)
 	setupColors()
 	background.load()
 	player.load()
+	stage.load()
 end
 
 function love.update(d)
@@ -92,6 +94,7 @@ function love.update(d)
 	controls.update()
 	background.update()
 	player.update()
+	stage.update()
 	collision.update()
 	chrome.update()
 end
@@ -104,9 +107,13 @@ function love.draw()
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	background.draw()
 	player.draw()
+	stage.draw()
 	chrome.draw()
 	love.graphics.setCanvas()
 	local windowX = 0
 	love.graphics.draw(container, windowX, 0, 0, gameScale, gameScale)
-	if dt < frameLimit then love.timer.sleep(frameLimit - dt) end
+	gameClock = gameClock + 1
+	if dt < frameLimit then
+		love.timer.sleep(frameLimit - dt)
+	end
 end

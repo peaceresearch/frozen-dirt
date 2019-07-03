@@ -3,9 +3,8 @@ local pm = require 'playmat'
 background = {
 	images = {
 		bottom = love.graphics.newImage('img/background/bottom.png'),
-		fadeBottom = love.graphics.newImage('img/background/fadebottom.png'),
 		top = love.graphics.newImage('img/background/top.png'),
-		fadeTop = love.graphics.newImage('img/background/fadetop.png'),
+		fade = love.graphics.newImage('img/background/fade.png')
 	},
   bottomStep = 0,
   topStep = 0,
@@ -25,17 +24,16 @@ function background.load()
 end
 
 function background.update()
-	local speed = 1.75
+	local speed = 1
 	background.bottomStep = background.bottomStep - speed
 	background.topStep = background.topStep - speed * 1.5
 end
 
 function background.draw()
-	local planeScale = .5
-	pm.drawPlane(background.bottomCam, background.images.bottom, background.bottomStep, 0, planeScale, planeScale, true)
-	love.graphics.draw(background.images.fadeBottom, gameX, gameY)
+	local planeScale = .2
+	pm.drawPlane(background.bottomCam, background.images.bottom, background.bottomStep, 102, planeScale, planeScale, true)
 	love.graphics.setStencilTest('greater', 0)
-	pm.drawPlane(background.topCam, background.images.top, background.topStep, 0, planeScale, planeScale, true)
+	pm.drawPlane(background.topCam, background.images.top, background.topStep, 60, planeScale, planeScale, true)
 	love.graphics.setStencilTest()
-	love.graphics.draw(background.images.fadeTop, gameX, gameY)
+	love.graphics.draw(background.images.fade, gameX, gameY)
 end

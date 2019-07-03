@@ -25,7 +25,8 @@ player = {
 	bombs = 3,
 	laserHeight = 0,
 	laserY = 0,
-	sideOffset = grid * 1.75
+	sideOffset = grid * 1.75,
+	sideY = 0
 }
 
 function player.load()
@@ -124,12 +125,11 @@ local function updateShoot()
 	local max = limit * 3
 	if not player.canShoot then
 		if player.shotClock % interval == 0 and player.shotClock <= limit then
-
 			-- marisa b
-			-- spawnBullet(0)
 			spawnBullet(.25)
 			spawnBullet(-.25)
 
+			-- spawnBullet(0)
 			-- if controls.focus then
 			-- 	spawnBullet(0, -1)
 			-- 	spawnBullet(0, -2)
@@ -141,7 +141,6 @@ local function updateShoot()
 			-- 	spawnBullet(1)
 			-- 	spawnBullet(2)
 			-- end
-
 		end
 		player.shotClock = player.shotClock + 1
 	end
@@ -151,7 +150,7 @@ end
 
 local function updateLaser()
 	if controls.shoot then
-		local max = gameY + player.y - grid
+		local max = player.y + player.sideY - gameY
 		if player.laserHeight < max then player.laserHeight = player.laserHeight + 32 end
 		if player.laserHeight > max then player.laserHeight = max end
 		player.laserY = gameY + max - player.laserHeight
@@ -159,6 +158,22 @@ local function updateLaser()
 end
 
 function player.update()
+	if controls.focus then
+		-- player.sideOffset = 10
+		-- player.sideY = player.y + gameY - 1 - 30
+		if player.sideOffset > 10 then
+			player.sideOffset = player.sideOffset - 4
+			player.sideY = player.sideY - 6
+		end
+	else
+		if player.sideOffset < 30 then
+			player.sideOffset = player.sideOffset + 4
+			player.sideY = player.sideY + 6
+		else
+			player.sideOffset = 30
+			player.sideY = grid
+		end
+	end
 	updateMove()
 	updateShoot()
 	updateLaser()
@@ -179,10 +194,9 @@ local function drawLaser()
 	love.graphics.setColor(colors.blueLight)
 	love.graphics.rectangle('fill', gameX + player.x - player.sideOffset - 3, player.laserY, laserWidth, player.laserHeight)
 	love.graphics.rectangle('fill', gameX + player.x + player.sideOffset - 4, player.laserY, laserWidth, player.laserHeight)
-	love.graphics.setColor(colors.light)
+	love.graphics.setColor(colors.white)
 	love.graphics.rectangle('fill', gameX + player.x - player.sideOffset - 1, player.laserY, laserWidth - 4, player.laserHeight)
 	love.graphics.rectangle('fill', gameX + player.x + player.sideOffset - 2, player.laserY, laserWidth - 4, player.laserHeight)
-	love.graphics.setColor(colors.white)
 	love.graphics.setStencilTest()
 end
 
@@ -192,8 +206,8 @@ function player.draw()
 
 	if controls.shoot then drawLaser() end
 
-	love.graphics.draw(player.images.sideMarisa, player.x + gameX - player.sideOffset, player.y + gameY - 1, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
-	love.graphics.draw(player.images.sideMarisa, player.x + gameX + player.sideOffset - 1, player.y + gameY - 1, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
+	love.graphics.draw(player.images.sideMarisa, player.x + gameX - player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
+	love.graphics.draw(player.images.sideMarisa, player.x + gameX + player.sideOffset - 1, player.y + player.sideY, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
 
 	if controls.focus then love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2) end
 end

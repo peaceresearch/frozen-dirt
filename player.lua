@@ -34,8 +34,8 @@ function player.load()
 		player.images[type]:setFilter('nearest', 'nearest')
 		player.images[type]:setWrap('repeat', 'repeat')
 	end
-	player.x = player.startingX
-	player.y = player.startingY
+	player.x = math.floor(player.startingX)
+	player.y = math.floor(player.startingY)
 	player.collider = hc.circle(player.x, player.y, 0)
 	player.grazeCollider = hc.circle(player.x, player.y, player.grazeSize)
 end

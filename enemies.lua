@@ -9,14 +9,19 @@ end
 
 enemies.one = enemyObj(function()
 	local function spawnEnemy()
-		local angle = math.pi / 2
-		local speed = 2
-		stage.spawnEnemy('fairyred', gameWidth / 2, gameHeight / 2, function(enemy)
+		stage.spawnEnemy('fairyred', gameWidth / 2, -stage.enemyImages.fairyred:getHeight() / 2, function(enemy)
+			enemy.angle = math.pi / 2
+			enemy.speed = 2.5
+		end, function(enemy)
+			if enemy.speed > 0 then enemy.speed = enemy.speed - .05 end
+			if enemy.speed < 0 then
+				enemy.speed = 0
+				enemy.y = math.floor(enemy.y)
+			end
 			enemy.velocity = {
-				x = math.cos(angle) * speed,
-				y = math.sin(angle) * speed
+				x = math.cos(enemy.angle) * enemy.speed,
+				y = math.sin(enemy.angle) * enemy.speed
 			}
-			print(enemy.velocity.x, enemy.velocity.y)
 		end)
 	end
 	if currentWave.clock == 0 then spawnEnemy() end

@@ -19,6 +19,8 @@ function stage.load()
 end
 
 function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
+	x = math.floor(x)
+	y = math.floor(y)
 	local enemy = hc.circle(x, y, stage.enemyImages[type]:getWidth() / 2)
 	enemy.image = stage.enemyImages[type]
 	enemy.colliderType = 'enemy'
@@ -57,6 +59,8 @@ local function drawEnemy(index)
 end
 
 function stage.spawnBullet(type, x, y, initFunc, updateFunc)
+	x = math.floor(x)
+	y = math.floor(y)
 	local bullet = hc.circle(x, y, stage.bulletImages[type]:getWidth() / 2)
 	bullet.image = stage.bulletImages[type]
 	bullet.rotation = 0
@@ -79,10 +83,10 @@ local function updateBullet(index)
 		bullet:moveTo(bullet.x, bullet.y)
 	end
 	bullet.clock = bullet.clock + 1
-	if bullet.y < gameY - bullet.image:getHeight() / 2 or
-		bullet.y > gameY + gameHeight + bullet.image:getHeight() / 2 or
-		bullet.x < gameX - bullet.image:getWidth() / 2 or
-		bullet.x > gameX + bullet.image:getWidth() / 2 then
+	if bullet.y < -bullet.image:getHeight() / 2 or
+		bullet.y > gameHeight + bullet.image:getHeight() / 2 or
+		bullet.x < -bullet.image:getWidth() / 2 or
+		bullet.x > bullet.image:getWidth() / 2 then
 		hc.remove(bullet)
 		table.remove(stage.bullets, index)
 	elseif stage.killBullets then
@@ -93,7 +97,7 @@ end
 
 local function drawBullet(index)
 	local bullet = stage.bullets[index]
-	love.graphics.draw(bullet.image, bullet.x, bullet.y, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+	love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
 end
 
 local function updateWaves()

@@ -51,14 +51,14 @@ end
 local function spawnBullet(diff, yOffset)
 	local mod = math.pi / 15
 	local size = 22
-	local y = player.y - grid
-	local x = player.x + gameX
+	local y = player.y
+	local x = player.x
 	if yOffset then y = y + yOffset * 10 end
 	if player.hitboxVisible then
 		x = x + 8
 		if yOffset then x = x - 4 * math.abs(yOffset) end
 	end
-	local bullet = hc.circle(x, y, size / 2)
+	local bullet = hc.circle(x + gameX, y + gameY, size / 2)
 	bullet.image = player.images.bulletMarisa
 	local angle = -math.pi / 2
 	bullet.angle = angle + diff * mod
@@ -66,30 +66,30 @@ local function spawnBullet(diff, yOffset)
 	bullet.diff = .1
 	bullet.initial = 0
 	bullet.count = 0
+	bullet.x = x
+	bullet.y = y
 	table.insert(player.bullets, bullet)
 end
 
 local function updateBullet(index)
 	local bullet = player.bullets[index]
-	local x, y = bullet:center()
-	local xOff = math.cos(bullet.count) * bullet.diff
-	local yOff = math.sin(bullet.count) * bullet.diff
 	bullet.count = bullet.count + .5
-	x = x + (math.cos(bullet.angle) + 0) * player.bulletSpeed
-	y = y + (math.sin(bullet.angle) + yOff) * player.bulletSpeed
-	bullet:moveTo(x, y)
-	if y < -bullet.image:getHeight() / 2 then
+	bullet.x = bullet.x + math.cos(bullet.angle) * player.bulletSpeed
+	bullet.y = bullet.y + math.sin(bullet.angle) * player.bulletSpeed
+	bullet:moveTo(bullet.x, bullet.y)
+	if bullet.y < -bullet.image:getHeight() / 2 then
 		hc.remove(bullet)
 		table.remove(player.bullets, index)
 	else
 		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
-			local x, y = enemy:center()
 			if enemy.health <= 0 then
-				enemy:moveTo(-gameWidth, - gameHeight)
+				enemy.x = -gameWidth
+				enemy.y = -gameHeight
 			else
 				if enemy and (enemy.health) then enemy.health = enemy.health - 1 end
 			end
-			bullet:moveTo(gameWidth * 3, gameHeight / 2)
+			bullet.x = -gameWidth
+			bullet.y = -gameHeight
 		end)
 	end
 end
@@ -179,9 +179,8 @@ end
 
 local function drawBullet(index)
 	local bullet = player.bullets[index]
-	local x, y = bullet:center()
 	love.graphics.setStencilTest('greater', 0)
-	love.graphics.draw(bullet.image, x, y, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+	love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
 	love.graphics.setStencilTest()
 end
 

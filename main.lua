@@ -12,12 +12,16 @@ gameY = grid
 
 colors = {
 	black = '222034',
-	purple = '442434',
+	purple = '45283c',
+	purpleLight = '76428a',
+	pink = 'd77bba',
+	red = 'ac3232',
+	redLight = 'd95763',
+
 	blue = '30346d',
 	grayDark = '4e4a4e',
 	brown = '854c30',
 	green = '346524',
-	red = 'd04648',
 	gray = '757161',
 	blue = '597dce',
 	orange = 'd27d2c',
@@ -58,6 +62,9 @@ function setStencilMask()
    love.graphics.draw(mask, 0, 0)
    love.graphics.setShader()
 end
+
+bossHealthInit = 0
+bossHealth = 0
 
 require('controls')
 require('background')

@@ -69,11 +69,38 @@ local function drawBottom()
 	local function drawDebug()
 		drawLabel('pshot:' .. #player.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 3 - 8)
 		drawLabel('eshot:' .. #stage.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 2 - 8)
-		drawLabel('enemy:000', gameX + gameWidth + grid * 1.5, y - 12 - 8)
+		drawLabel('enemy:' .. #stage.enemies, gameX + gameWidth + grid * 1.5, y - 12 - 8)
 	end
 	drawLabel(chrome.fps .. 'FPS', gameX + gameWidth + grid * 1.5, y)
 	drawDebug()
 	love.graphics.setFont(fontBig)
+end
+
+local function drawBoss()
+	local width = gameWidth - 8
+	local healthWidth = math.floor(bossHealth / bossHealthInit * width) - 2
+	if healthWidth > 0 then
+		local height = 10
+		local x = gameX + 4
+		local y = gameY + 4
+		love.graphics.setColor(colors.black)
+		love.graphics.setStencilTest('greater', 0)
+		love.graphics.rectangle('fill', x, y, width, height)
+		love.graphics.setStencilTest()
+		love.graphics.rectangle('fill', x, y, width, 1)
+		love.graphics.rectangle('fill', x, y + height - 1, width, 1)
+		love.graphics.rectangle('fill', x, y, 1, height)
+		love.graphics.rectangle('fill', x + width - 1, y, 1, height)
+		love.graphics.setColor(colors.red)
+		love.graphics.rectangle('fill', x + 1, y + 1, healthWidth, height - 2)
+		love.graphics.setColor(colors.redLight)
+		love.graphics.setStencilTest('greater', 0)
+		love.graphics.rectangle('fill', x + 1, y + 1, healthWidth, height - 2)
+		love.graphics.setStencilTest()
+		love.graphics.setColor(colors.black)
+		love.graphics.rectangle('fill', x + healthWidth + 1, y + 1, 1, height - 2)
+		love.graphics.setColor(colors.white)
+	end
 end
 
 function chrome.update()
@@ -86,4 +113,5 @@ function chrome.draw()
 	drawLives()
 	drawBombs()
 	drawBottom()
+	if bossHealth > 0 then drawBoss() end
 end

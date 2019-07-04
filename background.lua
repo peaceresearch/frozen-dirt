@@ -1,11 +1,8 @@
 local pm = require 'playmat'
 
 background = {
-	images = {
-		bottom = love.graphics.newImage('img/background/bottom.png'),
-		top = love.graphics.newImage('img/background/top.png'),
-		fade = love.graphics.newImage('img/background/fade.png')
-	},
+	types = {'hell'},
+	images = {},
   bottomStep = 0,
   topStep = 0,
   bottomMeshes = {},
@@ -14,12 +11,25 @@ background = {
 	grass = {},
 	bottomCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
 	topCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
+	currentType = 'hell'
 }
 
+	-- bottom = love.graphics.newImage('img/background/bottom.png'),
+	-- top = love.graphics.newImage('img/background/top.png'),
+	-- fade = love.graphics.newImage('img/background/fade.png')
+
 function background.load()
+	for i = 1, #background.types do
+		background.images[background.types[i]] = {
+			bottom = love.graphics.newImage('img/background/' .. background.types[i] .. '/bottom.png'),
+			top = love.graphics.newImage('img/background/' .. background.types[i] .. '/top.png'),
+			fade = love.graphics.newImage('img/background/' .. background.types[i] .. '/fade.png')
+		}
+	end
 	for type, img in pairs(background.images) do
-		background.images[type]:setFilter('nearest', 'nearest')
-		background.images[type]:setWrap('repeat', 'repeat')
+		for jType, jImg in pairs(background.images[type]) do
+			background.images[type][jType]:setFilter('nearest', 'nearest')
+		end
 	end
 end
 
@@ -31,9 +41,9 @@ end
 
 function background.draw()
 	local planeScale = .2
-	pm.drawPlane(background.bottomCam, background.images.bottom, background.bottomStep, 102, planeScale, planeScale, true)
+	pm.drawPlane(background.bottomCam, background.images[background.currentType].bottom, background.bottomStep, 102, planeScale, planeScale, true)
 	love.graphics.setStencilTest('greater', 0)
-	pm.drawPlane(background.topCam, background.images.top, background.topStep, 60, planeScale, planeScale, true)
+	pm.drawPlane(background.topCam, background.images[background.currentType].top, background.topStep, 60, planeScale, planeScale, true)
 	love.graphics.setStencilTest()
-	love.graphics.draw(background.images.fade, gameX, gameY)
+	love.graphics.draw(background.images[background.currentType].fade, gameX, gameY)
 end

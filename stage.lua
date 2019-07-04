@@ -1,8 +1,8 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'red', 'redbig', 'blue', 'bluebig'},
-	enemyTypes = {'fairyred'},
+	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill'},
+	enemyTypes = {'fairyred', 'chen'},
 	bulletImages = {},
 	enemyImages = {}
 }
@@ -11,16 +11,27 @@ currentWave = nil
 
 function stage.load()
 	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
-	for i = 1, #stage.enemyTypes do stage.enemyImages[stage.enemyTypes[i]] = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '.png') end
+	for i = 1, #stage.enemyTypes do
+		stage.enemyImages[stage.enemyTypes[i]] = {
+			idle1 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle1.png'),
+			idle2 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle2.png'),
+			idle3 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle3.png')
+		}
+	end
 	for type, img in pairs(stage.bulletImages) do stage.bulletImages[type]:setFilter('nearest', 'nearest') end
-	for type, img in pairs(stage.enemyImages) do stage.enemyImages[type]:setFilter('nearest', 'nearest') end
+	for type, img in pairs(stage.enemyImages) do
+		for jType, jImg in pairs(stage.enemyImages[type]) do
+			stage.enemyImages[type][jType]:setFilter('nearest', 'nearest')
+		end
+	end
 end
 
 function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
 	x = math.floor(x)
 	y = math.floor(y)
-	local enemy = hc.circle(x, y, stage.enemyImages[type]:getWidth() / 2)
-	enemy.image = stage.enemyImages[type]
+	local enemy = hc.circle(x + gameX, y + gameY, stage.enemyImages[type].idle1:getWidth() / 2)
+	enemy.image = stage.enemyImages[type].idle1
+	enemy.images = stage.enemyImages[type]
 	enemy.colliderType = 'enemy'
 	enemy.clock = 0
 	enemy.health = 10
@@ -40,6 +51,11 @@ local function updateEnemy(index)
 		enemy.y = enemy.y + enemy.velocity.y
 		enemy:moveTo(enemy.x, enemy.y)
 	end
+	local img = enemy.images.idle1
+	local interval = aniTime * 4
+	if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle2
+	elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3 end
+	enemy.image = img
 	enemy.clock = enemy.clock + 1
 	if enemy.y < -enemy.image:getHeight() / 2 or
 		enemy.y > gameHeight + enemy.image:getHeight() / 2 or
@@ -108,6 +124,7 @@ function stage.update()
 	for i = 1, #stage.bullets do updateBullet(i) end
 	updateWaves()
 end
+
 
 function stage.draw()
 	for i = 1, #stage.enemies do drawEnemy(i) end

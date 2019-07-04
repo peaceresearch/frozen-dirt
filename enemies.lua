@@ -18,7 +18,7 @@ enemies.one = enemyObj(function()
 		-- 				bullet.speed = 6
 		-- 				bullet.angle = math.pi * math.random()
 		-- 			end, function(bullet)
-		-- 				if bullet.speed > 3 then
+		-- 				if bullet.speed > 2.5 then
 		-- 					bullet.velocity = {
 		-- 						x = math.cos(bullet.angle) * (bullet.speed * .75),
 		-- 						y = math.sin(bullet.angle) * bullet.speed
@@ -36,26 +36,19 @@ enemies.one = enemyObj(function()
 		-- 	end
 		-- 	local function lasers()
 		-- 		local function laser(speedOffset, opposite, bulletOpposite)
-		-- 			local offset = grid * 8
-		-- 			local x = enemy.x - offset
+		-- 			local x = enemy.x - bossOffset
 		-- 			local bulletMod = math.pi / 4
-		-- 			local angle = math.pi / 2 - bulletMod
 		-- 			if opposite then
-		-- 				x = enemy.x + offset
+		-- 				x = enemy.x + bossOffset
 		-- 			end
+		-- 			local angle = getAngle({x = x, y = enemy.y}, player) - bulletMod
 		-- 			for i = 1, 3 do
 		-- 				stage.spawnBullet('bluebig', x, enemy.y, function(bullet)
-		-- 					bullet.angle = angle
 		-- 					bullet.speed = 3 + speedOffset / 4
-		-- 					if bulletOpposite then bullet.opposite = true end
-		-- 				end, function(bullet)
 		-- 					bullet.velocity = {
-		-- 						x = math.cos(bullet.angle) * bullet.speed,
-		-- 						y = math.sin(bullet.angle) * bullet.speed
+		-- 						x = math.cos(angle) * bullet.speed,
+		-- 						y = math.sin(angle) * bullet.speed
 		-- 					}
-		-- 					local mod = .01
-		-- 					if bullet.opposite then mod = mod * -1 end
-		-- 					bullet.angle = bullet.angle + mod
 		-- 				end)
 		-- 				angle = angle + bulletMod
 		-- 			end
@@ -63,6 +56,10 @@ enemies.one = enemyObj(function()
 		-- 		local interval = 5
 		-- 		local limit = interval * 5
 		-- 		local max = limit * 3
+		-- 		if enemy.clock % max == 0 then
+		-- 			explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true, false, true)
+		-- 			explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true, false, true)
+		-- 		end
 		-- 		if enemy.clock % interval == 0 and enemy.clock % max < limit then
 		-- 			laser(enemy.clock % max / interval, false, enemy.clock % (max * 2) < max)
 		-- 			laser(enemy.clock % max / interval, true, enemy.clock % (max * 2) >= max)
@@ -200,7 +197,7 @@ enemies.one = enemyObj(function()
 		-- 	spawnCenter()
 		-- 	spawnSides()
 		-- end,
-
+		--
 		-- function(enemy)
 		-- 	local function arrows()
 		-- 		local function spawnBullets()
@@ -216,7 +213,7 @@ enemies.one = enemyObj(function()
 		-- 		end
 		-- 		local interval = 5
 		-- 		local limit = interval * 20
-		-- 		local max = limit * 2.5
+		-- 		local max = limit * 1.5
 		-- 		if enemy.clock % interval == 0 and enemy.clock % max < limit then
 		-- 			if enemy.clock % max == 0 then
 		-- 				local mod = .6
@@ -272,6 +269,42 @@ enemies.one = enemyObj(function()
 		-- end,
 
 		function(enemy)
+			local function spawnBeam(opposite, explode, offset)
+				local pos = {x = enemy.x - bossOffset, y = enemy.y}
+				if opposite then pos.x = enemy.x + bossOffset end
+				if explode then explosions.spawn(pos, opposite, true, false, true) end
+				local img = 'redbig'
+				if opposite then img = 'bluebig' end
+				stage.spawnBullet(img, pos.x, enemy.y, function(bullet)
+					bullet.angle = getAngle(pos, enemy.bulletTarget)
+					bullet.speed = 2 + offset * .15
+				end, function(bullet)
+					if bullet.stopped then
+						if bullet.clock >= 30 and bullet.speed < 5 then
+							bullet.speed = bullet.speed + .05
+						end
+					else
+						bullet.speed = bullet.speed - .1
+						if bullet.speed <= 0 then
+							bullet.clock = 0
+							bullet.speed = 0
+							bullet.stopped = true
+							bullet.angle = math.tau * math.random()
+						end
+					end
+					bullet.velocity = {
+						x = math.cos(bullet.angle) * bullet.speed,
+						y = math.sin(bullet.angle) * bullet.speed
+					}
+				end)
+			end
+			local interval = 2
+			local limit = 90
+			local max = limit * 2.25
+			if enemy.clock % interval == 0 and enemy.clock % max < limit then
+				if enemy.clock % max == 0 then enemy.bulletTarget = {x = player.x, y = player.y} end
+				spawnBeam(enemy.clock % (max * 2) >= max, enemy.clock % (interval * 2) == 0, enemy.clock % max / interval)
+			end
 		end
 
 	}

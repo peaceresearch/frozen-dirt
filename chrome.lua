@@ -67,9 +67,10 @@ local function drawBottom()
 	love.graphics.setFont(font)
 	local y = winHeight - grid - grid / 2
 	local function drawDebug()
-		drawLabel('pshot:' .. #player.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 3 - 8)
-		drawLabel('eshot:' .. #stage.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 2 - 8)
-		drawLabel('enemy:' .. #stage.enemies, gameX + gameWidth + grid * 1.5, y - 12 - 8)
+		drawLabel('pshot:' .. #player.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 4 - 8)
+		drawLabel('eshot:' .. #stage.bullets, gameX + gameWidth + grid * 1.5, y - 12 * 3 - 8)
+		drawLabel('enemy:' .. #stage.enemies, gameX + gameWidth + grid * 1.5, y - 12 * 2 - 8)
+		drawLabel('explo:' .. #explosions.explosions, gameX + gameWidth + grid * 1.5, y - 12 * 1 - 8)
 	end
 	drawLabel(chrome.fps .. 'FPS', gameX + gameWidth + grid * 1.5, y)
 	drawDebug()

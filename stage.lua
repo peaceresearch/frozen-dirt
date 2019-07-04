@@ -9,6 +9,8 @@ stage = {
 
 currentWave = nil
 
+bossOffset = grid * 8
+
 function stage.load()
 	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
 	for i = 1, #stage.enemyTypes do

@@ -23,11 +23,29 @@ player = {
 	invulnerableClock = 0,
 	lives = 2,
 	bombs = 3,
-	laserHeight = 0,
-	laserY = 0,
+
+	lasers = {},
+
+	-- laserHeight = 0,
+	-- laserY = 0,
+	-- laserWidth = 6,
+
 	sideOffset = grid * 1.75,
 	sideY = 0
 }
+
+local function setupLasers()
+	for i = 1, 2 do
+		local laserObj = {
+			x = 0,
+			y = 0,
+			height = 0,
+			width = 6,
+			collider = false
+		}
+		table.insert(player.lasers, laserObj)
+	end
+end
 
 function player.load()
 	for type, img in pairs(player.images) do
@@ -38,6 +56,7 @@ function player.load()
 	player.y = math.floor(player.startingY)
 	player.collider = hc.circle(player.x, player.y, 0)
 	player.grazeCollider = hc.circle(player.x, player.y, player.grazeSize)
+	setupLasers()
 end
 
 function player.currentImage()
@@ -71,29 +90,6 @@ local function spawnBullet(diff, yOffset)
 	table.insert(player.bullets, bullet)
 end
 
-local function updateBullet(index)
-	local bullet = player.bullets[index]
-	bullet.count = bullet.count + .5
-	bullet.x = bullet.x + math.cos(bullet.angle) * player.bulletSpeed
-	bullet.y = bullet.y + math.sin(bullet.angle) * player.bulletSpeed
-	bullet:moveTo(bullet.x, bullet.y)
-	if bullet.y < -bullet.image:getHeight() / 2 then
-		hc.remove(bullet)
-		table.remove(player.bullets, index)
-	else
-		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
-			if enemy.health <= 0 then
-				enemy.x = -gameWidth
-				enemy.y = -gameHeight
-			else
-				if enemy and (enemy.health) then enemy.health = enemy.health - 1 end
-			end
-			bullet.x = -gameWidth
-			bullet.y = -gameHeight
-		end)
-	end
-end
-
 local function updateMove()
 	local speed = player.speed
 	if controls.focus then speed = 2 end
@@ -112,6 +108,30 @@ local function updateMove()
 	player.grazeCollider:moveTo(player.x, player.y)
 end
 
+local function updateBullet(index)
+	local bullet = player.bullets[index]
+	bullet.count = bullet.count + .5
+	bullet.x = bullet.x + math.cos(bullet.angle) * player.bulletSpeed
+	bullet.y = bullet.y + math.sin(bullet.angle) * player.bulletSpeed
+	bullet:moveTo(bullet.x, bullet.y)
+	if bullet.y < -bullet.image:getHeight() / 2 then
+		hc.remove(bullet)
+		table.remove(player.bullets, index)
+	else
+		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
+			if enemy.health <= 0 then
+				enemy.x = -gameWidth
+				enemy.y = -gameHeight
+			elseif enemy and (enemy.health) then
+				enemy.health = enemy.health - 1
+				explosions.spawn(bullet, true)
+			end
+			bullet.x = -gameWidth
+			bullet.y = -gameHeight
+		end)
+	end
+end
+
 local function updateShoot()
 	if controls.shoot and player.canShoot and player.clock >= 15 and player.invulnerableClock < 60 * 3 then
 		player.canShoot = false
@@ -122,22 +142,8 @@ local function updateShoot()
 	local max = limit * 3
 	if not player.canShoot then
 		if player.shotClock % interval == 0 and player.shotClock <= limit then
-			-- marisa b
 			spawnBullet(.25)
 			spawnBullet(-.25)
-
-			-- spawnBullet(0)
-			-- if controls.focus then
-			-- 	spawnBullet(0, -1)
-			-- 	spawnBullet(0, -2)
-			-- 	spawnBullet(0, 1)
-			-- 	spawnBullet(0, 2)
-			-- else
-			-- 	spawnBullet(-2)
-			-- 	spawnBullet(-1)
-			-- 	spawnBullet(1)
-			-- 	spawnBullet(2)
-			-- end
 		end
 		player.shotClock = player.shotClock + 1
 	end
@@ -146,12 +152,35 @@ local function updateShoot()
 end
 
 local function updateLaser()
-	if controls.shoot then
-		local max = player.y + player.sideY - gameY
-		if player.laserHeight < max then player.laserHeight = player.laserHeight + 32 end
-		if player.laserHeight > max then player.laserHeight = max end
-		player.laserY = gameY + max - player.laserHeight
-	else player.laserHeight = 0 end
+	for i = 1, #player.lasers do
+		local laser = player.lasers[i]
+		if i == 1 then laser.x = player.x - player.sideOffset - 3
+		else laser.x = player.x + player.sideOffset - 4 end
+		if controls.shoot then
+			local max = player.y + player.sideY - gameY
+			local function doDimensions()
+				if laser.height < max then laser.height = laser.height + 32 end
+				if laser.height > max then laser.height = max end
+				laser.y = gameY + max - laser.height
+			end
+			doDimensions()
+			laser.collider = hc.rectangle(laser.x, laser.y, laser.width, laser.height)
+			collision.check(hc.collisions(laser.collider), 'enemy', function(enemy)
+				if enemy.health <= 0 then
+					enemy.x = -gameWidth
+					enemy.y = -gameHeight
+				elseif enemy and (enemy.health) then enemy.health = enemy.health - .1 end
+				explosions.spawn(laser, true)
+				max = max - enemy.y - enemy.image:getHeight() / 2
+				doDimensions()
+				laser.y = laser.y + enemy.y + enemy.image:getHeight() / 2
+			end)
+		elseif laser.collider then
+			laser.height = 0
+			hc.remove(laser.collider)
+			laser.collider = false
+		end
+	end
 end
 
 function player.update()
@@ -185,14 +214,14 @@ local function drawBullet(index)
 end
 
 local function drawLaser()
-	local laserWidth = 6
 	love.graphics.setStencilTest('greater', 0)
-	love.graphics.setColor(colors.blueLight)
-	love.graphics.rectangle('fill', gameX + player.x - player.sideOffset - 3, player.laserY, laserWidth, player.laserHeight)
-	love.graphics.rectangle('fill', gameX + player.x + player.sideOffset - 4, player.laserY, laserWidth, player.laserHeight)
-	love.graphics.setColor(colors.white)
-	love.graphics.rectangle('fill', gameX + player.x - player.sideOffset - 1, player.laserY, laserWidth - 4, player.laserHeight)
-	love.graphics.rectangle('fill', gameX + player.x + player.sideOffset - 2, player.laserY, laserWidth - 4, player.laserHeight)
+	for i = 1, #player.lasers do
+		local laser = player.lasers[i]
+		love.graphics.setColor(colors.blueLight)
+		love.graphics.rectangle('fill', gameX + laser.x, laser.y, laser.width, laser.height)
+		love.graphics.setColor(colors.white)
+		love.graphics.rectangle('fill', gameX + laser.x + 2, laser.y, laser.width - 4, laser.height)
+	end
 	love.graphics.setStencilTest()
 end
 

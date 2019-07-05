@@ -1,5 +1,5 @@
 math.tau = math.pi * 2
-hc = require 'HC'
+hc = require 'lib/hc'
 
 winWidth = 640
 winHeight = 480

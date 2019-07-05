@@ -1,4 +1,4 @@
-local pm = require 'playmat'
+local pm = require 'lib/playmat'
 
 background = {
 	types = {'hell'},

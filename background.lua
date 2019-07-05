@@ -14,10 +14,6 @@ background = {
 	currentType = 'hell'
 }
 
-	-- bottom = love.graphics.newImage('img/background/bottom.png'),
-	-- top = love.graphics.newImage('img/background/top.png'),
-	-- fade = love.graphics.newImage('img/background/fade.png')
-
 function background.load()
 	for i = 1, #background.types do
 		background.images[background.types[i]] = {

@@ -41,13 +41,18 @@ local function setupLasers()
 			y = 0,
 			height = 0,
 			width = 6,
-			collider = false
+			collider = hc.rectangle(0, 0, 6, gameHeight) -- need to find how to change height/width of collider
 		}
 		table.insert(player.lasers, laserObj)
 	end
 end
 
 function player.load()
+
+	-- for i = 1, 6 do
+	-- 	player.images['idle' .. i] = love.graphics.newImage('img/player/idle' .. i .. '.png')
+	-- end
+
 	for type, img in pairs(player.images) do
 		player.images[type]:setFilter('nearest', 'nearest')
 		player.images[type]:setWrap('repeat', 'repeat')
@@ -164,21 +169,19 @@ local function updateLaser()
 				laser.y = gameY + max - laser.height
 			end
 			doDimensions()
-			laser.collider = hc.rectangle(laser.x, laser.y, laser.width, laser.height)
+			laser.collider:moveTo(laser.x, 0)
 			collision.check(hc.collisions(laser.collider), 'enemy', function(enemy)
 				if enemy.health <= 0 then
 					enemy.x = -gameWidth
 					enemy.y = -gameHeight
 				elseif enemy and (enemy.health) then enemy.health = enemy.health - .1 end
-				explosions.spawn(laser, true)
+				if gameClock % 5 == 0 then explosions.spawn(laser, true) end
 				max = max - enemy.y - enemy.image:getHeight() / 2
 				doDimensions()
 				laser.y = laser.y + enemy.y + enemy.image:getHeight() / 2
 			end)
-		elseif laser.collider then
+		elseif laser.height > 0 then
 			laser.height = 0
-			hc.remove(laser.collider)
-			laser.collider = false
 		end
 	end
 end

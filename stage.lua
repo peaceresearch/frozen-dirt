@@ -4,7 +4,9 @@ stage = {
 	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill'},
 	enemyTypes = {'fairyred', 'chen'},
 	bulletImages = {},
-	enemyImages = {}
+	enemyImages = {},
+	killBullets = false,
+	killBulletTimer = 0
 }
 
 currentWave = nil
@@ -43,6 +45,20 @@ function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
 	if initFunc then initFunc(enemy) end
 	if updateFunc then enemy.updateFunc = updateFunc end
 	table.insert(stage.enemies, enemy)
+end
+
+function moveEnemySides(enemy)
+	if not enemy.moveOffset then enemy.moveOffset = bossOffset end
+	local diff = bossOffset
+	if enemy.clock == 0 then
+		enemy.initial = enemy.moveOffset - diff
+		enemy.count = 0
+	end
+	local offset = math.cos(enemy.count) * diff
+	local mod = .25
+	enemy.moveOffset = enemy.initial - offset
+	enemy.count = enemy.count + mod
+	return enemy
 end
 
 local function updateEnemy(index)
@@ -85,6 +101,9 @@ function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	bullet.colliderType = 'bullet'
 	bullet.x = x
 	bullet.y = y
+	bullet.visible = true
+	bullet.color = 'red'
+	if string.find(string.lower(type), 'blue') then bullet.color = 'blue' end
 	if initFunc then initFunc(bullet) end
 	if updateFunc then bullet.updateFunc = updateFunc end
 	table.insert(stage.bullets, bullet)
@@ -100,19 +119,26 @@ local function updateBullet(index)
 			bullet:moveTo(bullet.x, bullet.y)
 		end
 		bullet.clock = bullet.clock + 1
-		if bullet.y < -bullet.image:getHeight() / 2 or
-			bullet.y > gameHeight + bullet.image:getHeight() / 2 or
-			bullet.x < -bullet.image:getWidth() / 2 or
-			bullet.x > gameWidth + bullet.image:getWidth() / 2 then
+		local bound = grid * 10
+		if bullet.y < gameY - bound or
+			bullet.y > gameY + gameHeight + bound or
+			bullet.x < gameX - bound or
+			bullet.x > gameX + gameWidth + bound then
 			hc.remove(bullet)
 			table.remove(stage.bullets, index)
-		end
+		elseif stage.killBullets then
+ 			explosions.spawn({x = bullet.x, y = bullet.y}, bullet.color == 'blue')
+ 			hc.remove(bullet)
+ 			table.remove(stage.bullets, index)
+ 		end
 	end
 end
 
 local function drawBullet(index)
 	local bullet = stage.bullets[index]
-	love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+	if bullet.visible then
+		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+	end
 end
 
 local function updateWaves()
@@ -125,6 +151,11 @@ function stage.update()
 	for i = 1, #stage.enemies do updateEnemy(i) end
 	for i = 1, #stage.bullets do updateBullet(i) end
 	updateWaves()
+	if stage.killBullets then
+		if stage.killBulletTimer == 0 then stage.killBulletTimer = 10 end
+		stage.killBulletTimer = stage.killBulletTimer - 1
+		if stage.killBulletTimer == 0 then stage.killBullets = false end
+	end
 end
 
 

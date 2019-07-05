@@ -38,7 +38,7 @@ end
 
 function explosions.update()
 	local function prune()
-		if #explosions.explosions > 10 then
+		if #explosions.explosions > 100 then
 			table.remove(explosions.explosions, 1)
 			prune()
 		end

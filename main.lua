@@ -17,6 +17,7 @@ colors = {
 	pink = 'd77bba',
 	red = 'ac3232',
 	redLight = 'd95763',
+	peach = 'eec39a',
 
 	blue = '30346d',
 	grayDark = '4e4a4e',
@@ -27,7 +28,6 @@ colors = {
 	orange = 'd27d2c',
 	grayLight = '8595a1',
 	greenLight = '6daa2c',
-	peach = 'd2aa99',
 	blueLight = '5fcde4',
 	yellow = 'dad45e',
 	white = 'ffffff'
@@ -39,7 +39,7 @@ currentScore = 0
 paused = false
 gameOver = false
 started = true
-aniTime = 10
+aniTime = 15
 
 dt = 0
 frameLimit = 1 / 60
@@ -47,7 +47,10 @@ frameLimit = 1 / 60
 fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
 font = love.graphics.newFont('fonts/goldbox.ttf', 8)
 
-mask = love.graphics.newImage('img/masks/mask.png')
+masks = {
+	half = love.graphics.newImage('img/masks/half.png'),
+	quarter = love.graphics.newImage('img/masks/quarter.png'),
+}
 maskShader = love.graphics.newShader[[
 		vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
 			if (Texel(texture, texture_coords).rgb == vec3(0.0)) {
@@ -57,9 +60,10 @@ maskShader = love.graphics.newShader[[
 			return vec4(1.0);
 		}
 	]]
+currentStencil = false
 function setStencilMask()
    love.graphics.setShader(maskShader)
-   love.graphics.draw(mask, 0, 0)
+   love.graphics.draw(currentStencil, 0, 0)
    love.graphics.setShader()
 end
 
@@ -119,6 +123,7 @@ function love.draw()
 		love.graphics.clear()
 	end)
 	love.graphics.setCanvas({container, stencil = true})
+	currentStencil = masks.half
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	background.draw()
 	player.draw()

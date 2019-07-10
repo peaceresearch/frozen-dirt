@@ -2,17 +2,12 @@ player = {
 	speed = 4,
 	startingX = gameWidth / 2,
 	startingY = gameHeight - grid * 4,
+	currentType = 'reimu',
 	images = {
-		idle1 = love.graphics.newImage('img/player/marisa-idle-1.png'),
-		idle2 = love.graphics.newImage('img/player/marisa-idle-2.png'),
-		idle3 = love.graphics.newImage('img/player/marisa-idle-3.png'),
-		left1 = love.graphics.newImage('img/player/marisa-left-1.png'),
-		left2 = love.graphics.newImage('img/player/marisa-left-2.png'),
-		right1 = love.graphics.newImage('img/player/marisa-right-1.png'),
-		right2 = love.graphics.newImage('img/player/marisa-right-2.png'),
 		hitbox = love.graphics.newImage('img/player/hitbox.png'),
+		hitboxBottom = love.graphics.newImage('img/player/hitboxbottom.png'),
 		bulletMarisa = love.graphics.newImage('img/player/bullet-marisa.png'),
-		sideMarisa = love.graphics.newImage('img/player/marisa-side.png')
+		border = love.graphics.newImage('img/player/border.png')
 	},
 	grazeSize = grid * 1.75,
 	clock = 0,
@@ -23,15 +18,11 @@ player = {
 	invulnerableClock = 0,
 	lives = 2,
 	bombs = 3,
-
 	lasers = {},
-
-	-- laserHeight = 0,
-	-- laserY = 0,
-	-- laserWidth = 6,
-
 	sideOffset = grid * 1.75,
-	sideY = 0
+	sideY = 0,
+	borderRotationA = 0,
+	borderRotationB = 0
 }
 
 local function setupLasers()
@@ -48,11 +39,12 @@ local function setupLasers()
 end
 
 function player.load()
+	local types = {'idle'}
+	for i = 1, #types do
+		for j = 1, 3 do 	player.images[types[i] .. j] = love.graphics.newImage('img/player/' .. player.currentType .. '/' .. types[i] .. j .. '.png') end
+	end
 
-	-- for i = 1, 6 do
-	-- 	player.images['idle' .. i] = love.graphics.newImage('img/player/idle' .. i .. '.png')
-	-- end
-
+	player.images.side = love.graphics.newImage('img/player/' .. player.currentType .. '/side.png')
 	for type, img in pairs(player.images) do
 		player.images[type]:setFilter('nearest', 'nearest')
 		player.images[type]:setWrap('repeat', 'repeat')
@@ -67,7 +59,7 @@ end
 function player.currentImage()
 	local img = player.images.idle1
 	local interval = aniTime * 4
-	if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or player.clock % interval >= aniTime * 3 then img = player.images.idle2
+	if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or (player.clock % interval >= aniTime * 3) then img = player.images.idle2
 	elseif player.clock % interval >= aniTime * 2 and player.clock % interval < aniTime * 3 then img = player.images.idle3 end
 	return img
 end
@@ -97,18 +89,20 @@ end
 
 local function updateMove()
 	local speed = player.speed
-	if controls.focus then speed = 2 end
-
+	if controls.focus then
+		speed = 2
+		local mod = .01
+		player.borderRotationA = player.borderRotationA + mod
+		player.borderRotationB = player.borderRotationB - mod / 2
+	end
 	if controls.left then player.x = player.x - speed
 	elseif controls.right then player.x = player.x + speed end
 	if controls.up then player.y = player.y - speed
 	elseif controls.down then player.y = player.y + speed end
-
 	if player.x <= player.images.hitbox:getWidth() / 2 then player.x = player.images.hitbox:getWidth() / 2
 	elseif player.x >= gameWidth - player.images.hitbox:getWidth() / 2 then player.x = gameWidth - player.images.hitbox:getWidth() / 2 end
 	if player.y <= player.images.hitbox:getHeight() / 2 then player.y = player.images.hitbox:getHeight() / 2
 	elseif player.y >= gameHeight - player.images.hitbox:getHeight() / 2 then player.y = gameHeight - player.images.hitbox:getHeight() / 2 end
-
 	player.collider:moveTo(player.x, player.y)
 	player.grazeCollider:moveTo(player.x, player.y)
 end
@@ -187,17 +181,16 @@ local function updateLaser()
 end
 
 function player.update()
+	local yOff = 4.5
 	if controls.focus then
-		-- player.sideOffset = 10
-		-- player.sideY = player.y + gameY - 1 - 30
 		if player.sideOffset > 10 then
-			player.sideOffset = player.sideOffset - 4
-			player.sideY = player.sideY - 6
+			player.sideOffset = player.sideOffset - 3
+			player.sideY = player.sideY - yOff
 		end
 	else
 		if player.sideOffset < 30 then
-			player.sideOffset = player.sideOffset + 4
-			player.sideY = player.sideY + 6
+			player.sideOffset = player.sideOffset + 3
+			player.sideY = player.sideY + yOff
 		else
 			player.sideOffset = 30
 			player.sideY = grid
@@ -228,14 +221,30 @@ local function drawLaser()
 	love.graphics.setStencilTest()
 end
 
+local function drawBorder()
+	currentStencil = masks.quarter
+	love.graphics.stencil(setStencilMask, 'replace', 1)
+	love.graphics.setStencilTest('greater', 0)
+	love.graphics.setColor(colors.peach)
+	love.graphics.draw(player.images.border, player.x + gameX - 1, player.y + gameY, player.borderRotationA, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
+	love.graphics.draw(player.images.border, player.x + gameX - 1, player.y + gameY, player.borderRotationB, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
+	love.graphics.setColor(colors.white)
+	love.graphics.setStencilTest()
+	currentStencil = masks.half
+	love.graphics.stencil(setStencilMask, 'replace', 1)
+end
+
 function player.draw()
 	for i, v in ipairs(player.bullets) do drawBullet(i) end
-	love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY - 1, 0, 1, 1, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
-
+	if controls.focus then drawBorder() end
+	love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY + 2, 0, 1, 1, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
 	if controls.shoot then drawLaser() end
-
-	love.graphics.draw(player.images.sideMarisa, player.x + gameX - player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
-	love.graphics.draw(player.images.sideMarisa, player.x + gameX + player.sideOffset - 1, player.y + player.sideY, 0, 1, 1, player.images.sideMarisa:getWidth() / 2, player.images.sideMarisa:getHeight() / 2)
-
-	if controls.focus then love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2) end
+	love.graphics.draw(player.images.side, player.x + gameX - player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
+	love.graphics.draw(player.images.side, player.x + gameX + player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
+	if controls.focus then
+		love.graphics.setStencilTest('greater', 0)
+		love.graphics.draw(player.images.hitboxBottom, player.x + gameX - 1, player.y + gameY - 1, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
+		love.graphics.setStencilTest()
+		love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
+	end
 end

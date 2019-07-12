@@ -18,6 +18,7 @@ colors = {
 	red = 'ac3232',
 	redLight = 'd95763',
 	peach = 'eec39a',
+	blueLightest = 'cbdbfc',
 
 	blue = '30346d',
 	grayDark = '4e4a4e',

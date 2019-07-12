@@ -2,11 +2,10 @@ player = {
 	speed = 4,
 	startingX = gameWidth / 2,
 	startingY = gameHeight - grid * 4,
-	currentType = 'reimu',
+	currentType = 'marisa',
 	images = {
 		hitbox = love.graphics.newImage('img/player/hitbox.png'),
 		hitboxBottom = love.graphics.newImage('img/player/hitboxbottom.png'),
-		bulletMarisa = love.graphics.newImage('img/player/bullet-marisa.png'),
 		border = love.graphics.newImage('img/player/border.png')
 	},
 	grazeSize = grid * 1.75,
@@ -22,7 +21,10 @@ player = {
 	sideOffset = grid * 1.75,
 	sideY = 0,
 	borderRotationA = 0,
-	borderRotationB = 0
+	borderRotationB = 0,
+	sideRotation = 0,
+	leftClock = 0,
+	rightClock = 0
 }
 
 local function setupLasers()
@@ -41,10 +43,10 @@ end
 function player.load()
 	local types = {'idle'}
 	for i = 1, #types do
-		for j = 1, 3 do 	player.images[types[i] .. j] = love.graphics.newImage('img/player/' .. player.currentType .. '/' .. types[i] .. j .. '.png') end
+		for j = 1, 3 do player.images[types[i] .. j] = love.graphics.newImage('img/player/' .. player.currentType .. '/' .. types[i] .. j .. '.png') end
 	end
-
 	player.images.side = love.graphics.newImage('img/player/' .. player.currentType .. '/side.png')
+	player.images.bullet = love.graphics.newImage('img/player/' .. player.currentType .. '/bullet.png')
 	for type, img in pairs(player.images) do
 		player.images[type]:setFilter('nearest', 'nearest')
 		player.images[type]:setWrap('repeat', 'repeat')
@@ -64,7 +66,7 @@ function player.currentImage()
 	return img
 end
 
-local function spawnBullet(diff, yOffset)
+local function spawnMarisaBullet(diff, yOffset)
 	local mod = math.pi / 15
 	local size = 22
 	local y = player.y
@@ -75,7 +77,7 @@ local function spawnBullet(diff, yOffset)
 		if yOffset then x = x - 4 * math.abs(yOffset) end
 	end
 	local bullet = hc.circle(x + gameX, y + gameY, size / 2)
-	bullet.image = player.images.bulletMarisa
+	bullet.image = player.images.bullet
 	local angle = -math.pi / 2
 	bullet.angle = angle + diff * mod
 	bullet.rotation = angle + diff * mod
@@ -95,8 +97,13 @@ local function updateMove()
 		player.borderRotationA = player.borderRotationA + mod
 		player.borderRotationB = player.borderRotationB - mod / 2
 	end
-	if controls.left then player.x = player.x - speed
-	elseif controls.right then player.x = player.x + speed end
+	if controls.left then
+		player.x = player.x - speed
+		player.leftClock = player.leftClock + 1
+	elseif controls.right then
+		player.x = player.x + speed
+		player.rightClock = player.rightClock + 1
+	end
 	if controls.up then player.y = player.y - speed
 	elseif controls.down then player.y = player.y + speed end
 	if player.x <= player.images.hitbox:getWidth() / 2 then player.x = player.images.hitbox:getWidth() / 2
@@ -131,7 +138,7 @@ local function updateBullet(index)
 	end
 end
 
-local function updateShoot()
+local function updateMarisaShoot()
 	if controls.shoot and player.canShoot and player.clock >= 15 and player.invulnerableClock < 60 * 3 then
 		player.canShoot = false
 		player.shotClock = 0
@@ -141,8 +148,13 @@ local function updateShoot()
 	local max = limit * 3
 	if not player.canShoot then
 		if player.shotClock % interval == 0 and player.shotClock <= limit then
-			spawnBullet(.25)
-			spawnBullet(-.25)
+			local diff = 1
+			if controls.focus then
+				diff = .25
+			end
+			spawnMarisaBullet(diff)
+			spawnMarisaBullet(0)
+			spawnMarisaBullet(-diff)
 		end
 		player.shotClock = player.shotClock + 1
 	end
@@ -150,7 +162,7 @@ local function updateShoot()
 	for i, v in ipairs(player.bullets) do updateBullet(i) end
 end
 
-local function updateLaser()
+local function updateMarisaLaser()
 	for i = 1, #player.lasers do
 		local laser = player.lasers[i]
 		if i == 1 then laser.x = player.x - player.sideOffset - 3
@@ -180,6 +192,25 @@ local function updateLaser()
 	end
 end
 
+local function updateReimuShoot()
+	if controls.shoot and player.canShoot and player.clock >= 15 and player.invulnerableClock < 60 * 3 then
+		player.canShoot = false
+		player.shotClock = 0
+	end
+	local interval = 5
+	local limit = interval * 2
+	local max = limit * 3
+	if not player.canShoot then
+		if player.shotClock % interval == 0 and player.shotClock <= limit then
+			spawnMarisaBullet(.25)
+			spawnMarisaBullet(-.25)
+		end
+		player.shotClock = player.shotClock + 1
+	end
+	if player.shotClock >= max then player.canShoot = true end
+	for i, v in ipairs(player.bullets) do updateBullet(i) end
+end
+
 function player.update()
 	local yOff = 4.5
 	if controls.focus then
@@ -197,8 +228,13 @@ function player.update()
 		end
 	end
 	updateMove()
-	updateShoot()
-	updateLaser()
+	if player.currentType == 'marisa' then
+		updateMarisaShoot()
+		updateMarisaLaser()
+	elseif player.currentType == 'reimu' then
+		updateReimuShoot()
+	end
+	player.sideRotation = player.sideRotation - .05
 	player.clock = player.clock + 1
 end
 
@@ -225,9 +261,9 @@ local function drawBorder()
 	currentStencil = masks.quarter
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
-	love.graphics.setColor(colors.peach)
-	love.graphics.draw(player.images.border, player.x + gameX - 1, player.y + gameY, player.borderRotationA, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
-	love.graphics.draw(player.images.border, player.x + gameX - 1, player.y + gameY, player.borderRotationB, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
+	love.graphics.setColor(colors.blueLightest)
+	love.graphics.draw(player.images.border, player.x + gameX, player.y + gameY, player.borderRotationA, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
+	love.graphics.draw(player.images.border, player.x + gameX, player.y + gameY, player.borderRotationB, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
 	love.graphics.setColor(colors.white)
 	love.graphics.setStencilTest()
 	currentStencil = masks.half
@@ -237,13 +273,13 @@ end
 function player.draw()
 	for i, v in ipairs(player.bullets) do drawBullet(i) end
 	if controls.focus then drawBorder() end
-	love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY + 2, 0, 1, 1, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
+	love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY, 0, 1, 1, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
 	if controls.shoot then drawLaser() end
-	love.graphics.draw(player.images.side, player.x + gameX - player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
-	love.graphics.draw(player.images.side, player.x + gameX + player.sideOffset, player.y + player.sideY, 0, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
+	love.graphics.draw(player.images.side, player.x + gameX - player.sideOffset, player.y + player.sideY, player.sideRotation, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
+	love.graphics.draw(player.images.side, player.x + gameX + player.sideOffset - 1, player.y + player.sideY, -player.sideRotation, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
 	if controls.focus then
 		love.graphics.setStencilTest('greater', 0)
-		love.graphics.draw(player.images.hitboxBottom, player.x + gameX - 1, player.y + gameY - 1, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
+		love.graphics.draw(player.images.hitboxBottom, player.x + gameX, player.y + gameY - 1, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
 		love.graphics.setStencilTest()
 		love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
 	end

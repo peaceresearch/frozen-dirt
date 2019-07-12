@@ -12,7 +12,6 @@ enemies.one = enemyObj(function()
 	local attacks = {
 
 		function(enemy)
-
 		end,
 
 		function(enemy)
@@ -1197,14 +1196,14 @@ enemies.one = enemyObj(function()
 		end,
 
 		function(enemy)
-
-			local function spray()
+			local function spray(opposite)
 				local angle = enemy.bulletAngle
 				local count = 35
 				for i = 1, count do
 					stage.spawnBullet('redarrow', enemy.x, enemy.y, function(bullet)
 						bullet.angle = angle
 						bullet.speed = 3
+						if opposite then bullet.opposite = true end
 					end, function(bullet)
 						if bullet.clock < 60 then
 							bullet.velocity = {
@@ -1212,7 +1211,9 @@ enemies.one = enemyObj(function()
 								y = math.sin(bullet.angle) * bullet.speed
 							}
 							bullet.rotation = bullet.angle
-							bullet.angle = bullet.angle + 0.075
+							local mod = 0.075
+							if bullet.opposite then mod = mod * -1 end
+							bullet.angle = bullet.angle + mod
 						end
 					end)
 					angle = angle + math.tau / count
@@ -1242,8 +1243,10 @@ enemies.one = enemyObj(function()
 				end
 			end
 			local joltInterval = 60
+			local sprayInterval = 30
 			if enemy.clock == 0 then enemy.bulletAngle = 0 end
-			if enemy.clock % 30 == 0 and enemy.bulletAngle then spray() end
+			local sprayLimit = sprayInterval * 8
+			if enemy.clock % sprayInterval == 0 and enemy.bulletAngle then spray(enemy.clock % sprayLimit < sprayLimit / 2) end
 			if enemy.clock % joltInterval == 0 and enemy.bulletAngle and enemy.clock > 0 then jolt(enemy.clock % (joltInterval * 2) == 0) end
 		end
 

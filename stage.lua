@@ -2,7 +2,7 @@ stage = {
 	enemies = {},
 	bullets = {},
 	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill'},
-	enemyTypes = {'fairyred', 'chen'},
+	enemyTypes = {'fairyred', 'fairybig', 'chen'},
 	bulletImages = {},
 	enemyImages = {},
 	killBullets = false,
@@ -157,7 +157,6 @@ function stage.update()
 		if stage.killBulletTimer == 0 then stage.killBullets = false end
 	end
 end
-
 
 function stage.draw()
 	for i = 1, #stage.enemies do drawEnemy(i) end

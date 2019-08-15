@@ -1,12 +1,16 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill'},
-	enemyTypes = {'fairyred', 'fairybig', 'chen'},
+	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill', 'gray', 'orange', 'orangebig'},
+	enemyTypes = {'fairyred', 'fairybig', 'chen', 'salamander', 'jackfrost'},
 	bulletImages = {},
 	enemyImages = {},
 	killBullets = false,
-	killBulletTimer = 0
+	killBulletTimer = 0,
+	border = love.graphics.newImage('img/enemies/border.png'),
+	borderRotation = 0,
+	borderScale = 1,
+	borderScaleFlipped = false
 }
 
 currentWave = nil
@@ -28,6 +32,7 @@ function stage.load()
 			stage.enemyImages[type][jType]:setFilter('nearest', 'nearest')
 		end
 	end
+	stage.border:setFilter('nearest', 'nearest')
 end
 
 function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
@@ -63,31 +68,56 @@ end
 
 local function updateEnemy(index)
 	local enemy = stage.enemies[index]
-	if enemy.updateFunc then stage.enemies[index].updateFunc(stage.enemies[index]) end
-	if enemy.velocity then
-		enemy.x = enemy.x + enemy.velocity.x
-		enemy.y = enemy.y + enemy.velocity.y
-		enemy:moveTo(enemy.x, enemy.y)
-	end
-	local img = enemy.images.idle1
-	local interval = aniTime * 4
-	if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle2
-	elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3 end
-	enemy.image = img
-	enemy.clock = enemy.clock + 1
-	if enemy.y < -enemy.image:getHeight() / 2 or
-		enemy.y > gameHeight + enemy.image:getHeight() / 2 or
-		enemy.x < -enemy.image:getWidth() / 2 or
-		enemy.x > gameWidth + enemy.image:getWidth() / 2 then
-		if enemy.suicide then enemy.suicide() end
-		hc.remove(enemy)
-		table.remove(stage.enemies, index)
+	if enemy then
+		if enemy.updateFunc then stage.enemies[index].updateFunc(stage.enemies[index]) end
+		if enemy.velocity then
+			enemy.x = enemy.x + enemy.velocity.x
+			enemy.y = enemy.y + enemy.velocity.y
+			enemy:moveTo(enemy.x, enemy.y)
+		end
+		local img = enemy.images.idle1
+		local interval = aniTime * 4
+		if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle2
+		elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3 end
+		enemy.image = img
+		enemy.clock = enemy.clock + 1
+		local bounds = 1.5
+		if enemy.y < -enemy.image:getHeight() * bounds or
+			enemy.y > gameHeight + enemy.image:getHeight() * bounds or
+			enemy.x < -enemy.image:getWidth() * bounds or
+			enemy.x > gameWidth + enemy.image:getWidth() * bounds then
+			if enemy.suicide then enemy.suicide() end
+			hc.remove(enemy)
+			table.remove(stage.enemies, index)
+		end
 	end
 end
 
 local function drawEnemy(index)
 	local enemy = stage.enemies[index]
-	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, 1, 1, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
+	local function drawBorder()
+		currentStencil = masks.quarter
+		love.graphics.stencil(setStencilMask, 'replace', 1)
+		love.graphics.setColor(colors.purpleLight)
+		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * 1.1, stage.borderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
+		love.graphics.setColor(colors.white)
+	end
+	local function drawGlow()
+		local radius = 38
+		currentStencil = masks.quarter
+		love.graphics.stencil(setStencilMask, 'replace', 1)
+		love.graphics.setColor(colors.purple)
+		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius)
+		currentStencil = masks.half
+		love.graphics.stencil(setStencilMask, 'replace', 1)
+		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius - 12)
+		love.graphics.setColor(colors.white)
+	end
+	love.graphics.setStencilTest('greater', 0)
+	drawGlow()
+	drawBorder()
+	love.graphics.setStencilTest()
+	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, borderScale, borderScale, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
 end
 
 function stage.spawnBullet(type, x, y, initFunc, updateFunc)
@@ -137,12 +167,26 @@ end
 local function drawBullet(index)
 	local bullet = stage.bullets[index]
 	if bullet.visible then
+		if bullet.transparent or bullet.superTransparent then
+			if bullet.superTransparent then
+				currentStencil = masks.quarter
+				love.graphics.stencil(setStencilMask, 'replace', 1)
+			end
+			love.graphics.setStencilTest('greater', 0)
+		end
 		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+		if bullet.transparent or bullet.superTransparent then
+			if bullet.superTransparent then
+				currentStencil = masks.half
+				love.graphics.stencil(setStencilMask, 'replace', 1)
+			end
+			love.graphics.setStencilTest()
+		end
 	end
 end
 
 local function updateWaves()
-	if not currentWave then currentWave = enemies.one end
+	if not currentWave then currentWave = enemies.boss end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
 end
@@ -155,6 +199,15 @@ function stage.update()
 		if stage.killBulletTimer == 0 then stage.killBulletTimer = 10 end
 		stage.killBulletTimer = stage.killBulletTimer - 1
 		if stage.killBulletTimer == 0 then stage.killBullets = false end
+	end
+	stage.borderRotation = stage.borderRotation + .005
+	local mod = .001
+	if stage.borderScaleFlipped then mod = -mod end
+	stage.borderScale = stage.borderScale + mod
+	if stage.borderScale >= 1.15 then
+		stage.borderScaleFlipped = true
+	elseif stage.borderScale < 1 then
+		stage.borderScaleFlipped = false
 	end
 end
 

@@ -1,23 +1,31 @@
 local pm = require('lib/playmat')
 background = {
   types = {
-    'hell'
+		'antlia',
+    'carina',
+		'eridanus',
+		'horologium',
+		'bootes',
   },
   images = { },
-  bottomStep = 0,
+	bottomStep = 0,
+  middleStep = 0,
   topStep = 0,
-  bottomMeshes = { },
-  topMeshes = { },
+	bottomMeshes = {},
+  middleMeshes = {},
+  topMeshes = {},
   tileSize = 64,
   grass = { },
-  bottomCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
-  topCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, 0, 64, 1, 1),
-  currentType = 'hell'
+	bottomCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, -math.pi / 2, 64, 1, 1),
+  middleCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, -math.pi / 2, 64, 1, 1),
+  topCam = pm.newCamera(gameWidth + gameX * 2, gameHeight + gameY * 2, 0, 0, -math.pi / 2, 64, 1, 1),
+  currentType = 'bootes'
 }
 background.load = function()
   for i = 1, #background.types do
     background.images[background.types[i]] = {
       bottom = love.graphics.newImage("img/background/" .. tostring(background.types[i]) .. "/bottom.png"),
+			middle = love.graphics.newImage("img/background/" .. tostring(background.types[i]) .. "/middle.png"),
       top = love.graphics.newImage("img/background/" .. tostring(background.types[i]) .. "/top.png"),
       fade = love.graphics.newImage("img/background/" .. tostring(background.types[i]) .. "/fade.png")
     }
@@ -29,15 +37,21 @@ background.load = function()
   end
 end
 background.update = function()
-  local speed = 1
-  background.bottomStep = background.bottomStep - speed
-  background.topStep = background.topStep - (speed * 1.5)
+  local speed = .75
+  background.bottomStep = background.bottomStep + speed
+	background.middleStep = background.topStep + (speed * 1.3)
+  background.topStep = background.topStep + (speed * 1.6)
 end
 background.draw = function()
   local planeScale = .2
-  pm.drawPlane(background.bottomCam, background.images[background.currentType].bottom, background.bottomStep, 102, planeScale, planeScale, true)
+	local offset = -grid * 4.75 - 1
+
+  pm.drawPlane(background.bottomCam, background.images[background.currentType].bottom, 0, background.bottomStep, planeScale, planeScale, true)
+  love.graphics.draw(background.images[background.currentType].fade, gameX, gameY + grid)
+  pm.drawPlane(background.middleCam, background.images[background.currentType].middle, offset, background.topStep, planeScale, planeScale, true)
   love.graphics.setStencilTest('greater', 0)
-  pm.drawPlane(background.topCam, background.images[background.currentType].top, background.topStep, 60, planeScale, planeScale, true)
+  pm.drawPlane(background.topCam, background.images[background.currentType].top, offset, background.topStep, planeScale, planeScale, true)
   love.graphics.setStencilTest()
-  return love.graphics.draw(background.images[background.currentType].fade, gameX, gameY)
+  love.graphics.draw(background.images[background.currentType].fade, gameX, gameY)
+
 end

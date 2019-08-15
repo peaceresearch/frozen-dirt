@@ -1,4 +1,5 @@
-collision = { }
+collision = {}
+
 collision.check = function(collider, type, func)
   for shape, delta in pairs(collider) do
     if shape.colliderType == type then
@@ -6,4 +7,7 @@ collision.check = function(collider, type, func)
     end
   end
 end
-collision.update = function() end
+
+collision.update = function()
+
+end

@@ -42,13 +42,19 @@ local function setupLasers()
 end
 
 function player.load()
-	for i = 1, 3 do player.images['idle' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/idle' .. i .. '.png') end
-	for i = 1, 2 do
-		player.images['left' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/left' .. i .. '.png')
-		player.images['right' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/right' .. i .. '.png')
+	if player.currentType == 'demonica' then
+		player.images.idle1 = love.graphics.newImage('img/player/demonica/idle1.png')
+		player.images.side = love.graphics.newImage('img/player/marisa/side.png')
+		player.images.bullet = love.graphics.newImage('img/player/marisa/bullet.png')
+	else
+		for i = 1, 3 do player.images['idle' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/idle' .. i .. '.png') end
+		for i = 1, 2 do
+			player.images['left' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/left' .. i .. '.png')
+			player.images['right' .. i] = love.graphics.newImage('img/player/' .. player.currentType .. '/right' .. i .. '.png')
+		end
+		player.images.side = love.graphics.newImage('img/player/' .. player.currentType .. '/side.png')
+		player.images.bullet = love.graphics.newImage('img/player/' .. player.currentType .. '/bullet.png')
 	end
-	player.images.side = love.graphics.newImage('img/player/' .. player.currentType .. '/side.png')
-	player.images.bullet = love.graphics.newImage('img/player/' .. player.currentType .. '/bullet.png')
 	for type, img in pairs(player.images) do
 		player.images[type]:setFilter('nearest', 'nearest')
 		player.images[type]:setWrap('repeat', 'repeat')
@@ -62,20 +68,22 @@ end
 
 function player.currentImage()
 	local img = player.images.idle1
-	local interval = aniTime * 4
-	if controls.left then
-		img = player.images.left1
-		if player.leftClock >= interval / 2 then img = player.images.left2 end
-		player.leftClock = player.leftClock + 1
-	elseif controls.right then
-		img = player.images.right1
-		if player.rightClock >= interval / 2 then img = player.images.right2 end
-		player.rightClock = player.rightClock + 1
-	else
-		if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or (player.clock % interval >= aniTime * 3) then img = player.images.idle2
-		elseif player.clock % interval >= aniTime * 2 and player.clock % interval < aniTime * 3 then img = player.images.idle3 end
-		player.leftClock = 0
-		player.rightClock = 0
+	if player.currentType ~= 'demonica' then
+		local interval = aniTime * 4
+		if controls.left then
+			img = player.images.left1
+			if player.leftClock >= interval / 2 then img = player.images.left2 end
+			player.leftClock = player.leftClock + 1
+		elseif controls.right then
+			img = player.images.right1
+			if player.rightClock >= interval / 2 then img = player.images.right2 end
+			player.rightClock = player.rightClock + 1
+		else
+			if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or (player.clock % interval >= aniTime * 3) then img = player.images.idle2
+			elseif player.clock % interval >= aniTime * 2 and player.clock % interval < aniTime * 3 then img = player.images.idle3 end
+			player.leftClock = 0
+			player.rightClock = 0
+		end
 	end
 	return img
 end
@@ -160,13 +168,14 @@ local function updateBullet(index)
 		table.remove(player.bullets, index)
 	else
 		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
+			local isBlue = false
+			if player.currentType == 'marisa' then isBlue = true end
 			if enemy.health <= 0 then
+				explosions.spawn(enemy, isBlue, true)
 				enemy.x = -gameWidth
 				enemy.y = -gameHeight
 			elseif enemy and (enemy.health) then
 				enemy.health = enemy.health - 1
-				local isBlue = false
-				if player.currentType == 'marisa' then isBlue = true end
 				explosions.spawn(bullet, isBlue)
 			end
 			bullet.x = -gameWidth
@@ -218,7 +227,7 @@ local function updateMarisaLaser()
 					enemy.x = -gameWidth
 					enemy.y = -gameHeight
 				elseif enemy and (enemy.health) then enemy.health = enemy.health - .1 end
-				if gameClock % 5 == 0 then explosions.spawn(laser, true) end
+				if gameClock % 5 == 0 then explosions.spawn({x = laser.x, y = laser.y + 8}, true) end
 				max = max - enemy.y - enemy.image:getHeight() / 2
 				doDimensions()
 				laser.y = laser.y + enemy.y + enemy.image:getHeight() / 2
@@ -304,7 +313,7 @@ function player.update()
 		end
 	end
 	updateMove()
-	if player.currentType == 'marisa' then
+	if player.currentType == 'marisa' or player.currentType == 'demonica' then
 		updateMarisaShoot()
 		updateMarisaLaser()
 	elseif player.currentType == 'reimu' then
@@ -322,7 +331,7 @@ function player.draw()
 	drawSides()
 	if controls.focus then
 		love.graphics.setStencilTest('greater', 0)
-		love.graphics.draw(player.images.hitboxBottom, player.x + gameX, player.y + gameY - 1, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
+		love.graphics.draw(player.images.hitboxBottom, player.x + gameX - 1, player.y + gameY - 1, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
 		love.graphics.setStencilTest()
 		love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
 	end

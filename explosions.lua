@@ -1,21 +1,19 @@
 explosions = {
-  explosions = { },
-  types = {
-    'red',
-    'blue',
-    'gray'
-  },
-  images = { }
+  explosions = {},
+  types = {'red', 'blue', 'gray'},
+  images = {}
 }
+
 explosions.load = function()
   for i, type in pairs(explosions.types) do
-    explosions.images[type] = { }
+    explosions.images[type] = {}
     for i = 1, 5 do
-      explosions.images[type][i] = love.graphics.newImage("img/explosions/explosion-" .. tostring(type) .. tostring((i - 1)) .. ".png")
+      explosions.images[type][i] = love.graphics.newImage('img/explosions/explosion-' .. tostring(type) .. tostring((i - 1)) .. '.png')
       explosions.images[type][i]:setFilter('nearest', 'nearest')
     end
   end
 end
+
 explosions.spawn = function(target, blue, big, gray, transparent)
   local explosion = {
     currentTexture = 1,
@@ -46,6 +44,7 @@ explosions.spawn = function(target, blue, big, gray, transparent)
   end
   return table.insert(explosions.explosions, explosion)
 end
+
 explosions.update = function()
   local prune
   prune = function()
@@ -74,6 +73,7 @@ explosions.update = function()
     end
   end
 end
+
 explosions.draw = function()
   for i = 1, #explosions.explosions do
     local explosion = explosions.explosions[i]

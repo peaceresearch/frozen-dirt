@@ -17,16 +17,18 @@ colors = {
   redLight = 'd95763',
   peach = 'eec39a',
   blueLightest = 'cbdbfc',
-  blue = '30346d',
+	blueLight = '5fcde4',
+  blueMid = '639bff',
+	blueDarkest = '3f3f74',
+  blue = '5b6ee1',
   grayDark = '4e4a4e',
   brown = '854c30',
   green = '346524',
+  greenLight = '6daa2c',
   gray = '757161',
   blue = '597dce',
   orange = 'd27d2c',
   grayLight = '8595a1',
-  greenLight = '6daa2c',
-  blueLight = '5fcde4',
   yellow = 'dad45e',
   white = 'ffffff'
 }
@@ -40,7 +42,9 @@ aniTime = 15
 dt = 0
 frameLimit = 1 / 60
 fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
-font = love.graphics.newFont('fonts/goldbox.ttf', 8)
+font = love.graphics.newFont('fonts/megaten.ttf', 7)
+megaten = love.graphics.newFont('fonts/megaten.ttf', 7)
+ds = love.graphics.newFont('fonts/ds.ttf', 16)
 masks = {
   half = love.graphics.newImage('img/masks/half.png'),
   quarter = love.graphics.newImage('img/masks/quarter.png')
@@ -85,7 +89,7 @@ getAngle = function(b, a)
   return math.atan2(a.y - b.y, a.x - b.x)
 end
 love.load = function()
-  love.window.setTitle('frozen dirt')
+  love.window.setTitle('bullet hell engines server contest thing')
   container = love.graphics.newCanvas(winWidth, winHeight)
   container:setFilter('nearest', 'nearest')
   love.window.setMode(winWidth * gameScale, winHeight * gameScale)
@@ -119,8 +123,8 @@ love.draw = function()
   currentStencil = masks.half
   love.graphics.stencil(setStencilMask, 'replace', 1)
   background.draw()
-  player.draw()
   stage.draw()
+  player.draw()
   explosions.draw()
   chrome.draw()
   love.graphics.setCanvas()

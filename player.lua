@@ -171,12 +171,12 @@ local function updateBullet(index)
 			local isBlue = false
 			if player.currentType == 'marisa' then isBlue = true end
 			if enemy.health <= 0 then
-				explosions.spawn(enemy, isBlue, true)
+				explosions.spawn(enemy, false, true, true)
 				enemy.x = -gameWidth
 				enemy.y = -gameHeight
 			elseif enemy and (enemy.health) then
 				enemy.health = enemy.health - 1
-				explosions.spawn(bullet, isBlue)
+				explosions.spawn(bullet, false, false, true)
 			end
 			bullet.x = -gameWidth
 			bullet.y = -gameHeight
@@ -227,7 +227,7 @@ local function updateMarisaLaser()
 					enemy.x = -gameWidth
 					enemy.y = -gameHeight
 				elseif enemy and (enemy.health) then enemy.health = enemy.health - .1 end
-				if gameClock % 5 == 0 then explosions.spawn({x = laser.x, y = laser.y + 8}, true) end
+				if gameClock % 5 == 0 then explosions.spawn({x = laser.x, y = laser.y + 8}, false, false, true) end
 				max = max - enemy.y - enemy.image:getHeight() / 2
 				doDimensions()
 				laser.y = laser.y + enemy.y + enemy.image:getHeight() / 2
@@ -268,7 +268,7 @@ local function drawLaser()
 	love.graphics.setStencilTest('greater', 0)
 	for i = 1, #player.lasers do
 		local laser = player.lasers[i]
-		love.graphics.setColor(colors.blueLight)
+		love.graphics.setColor(colors.grayLightest)
 		love.graphics.rectangle('fill', gameX + laser.x, laser.y, laser.width, laser.height)
 		love.graphics.setColor(colors.white)
 		love.graphics.rectangle('fill', gameX + laser.x + 2, laser.y, laser.width - 4, laser.height)

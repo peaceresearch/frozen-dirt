@@ -19,16 +19,18 @@ colors = {
   blueLightest = 'cbdbfc',
 	blueLight = '5fcde4',
   blueMid = '639bff',
+	blueDark = '306082',
 	blueDarkest = '3f3f74',
   blue = '5b6ee1',
-  grayDark = '4e4a4e',
   brown = '854c30',
   green = '346524',
   greenLight = '6daa2c',
-  gray = '757161',
   blue = '597dce',
   orange = 'd27d2c',
+  gray = '757161',
   grayLight = '8595a1',
+	grayLightest = '9badb7',
+  grayDark = '4e4a4e',
   yellow = 'dad45e',
   white = 'ffffff'
 }
@@ -38,13 +40,11 @@ currentScore = 0
 paused = false
 gameOver = false
 started = true
-aniTime = 15
+aniTime = 20
 dt = 0
 frameLimit = 1 / 60
 fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
-font = love.graphics.newFont('fonts/megaten.ttf', 7)
-megaten = love.graphics.newFont('fonts/megaten.ttf', 7)
-ds = love.graphics.newFont('fonts/ds.ttf', 16)
+font = love.graphics.newFont('fonts/goldbox.ttf', 8)
 masks = {
   half = love.graphics.newImage('img/masks/half.png'),
   quarter = love.graphics.newImage('img/masks/quarter.png')
@@ -62,8 +62,12 @@ setStencilMask = function()
   love.graphics.draw(currentStencil, 0, 0)
   return love.graphics.setShader()
 end
+
 bossHealthInit = 0
 bossHealth = 0
+bossName = ''
+bossSpell = ''
+
 require('controls')
 require('background')
 require('player')
@@ -97,7 +101,7 @@ love.load = function()
   love.graphics.setLineWidth(1)
   font:setFilter('nearest', 'nearest')
   fontBig:setFilter('nearest', 'nearest')
-  love.graphics.setFont(fontBig)
+  love.graphics.setFont(font)
   setupColors()
   background.load()
   player.load()
@@ -123,8 +127,8 @@ love.draw = function()
   currentStencil = masks.half
   love.graphics.stencil(setStencilMask, 'replace', 1)
   background.draw()
-  stage.draw()
   player.draw()
+  stage.draw()
   explosions.draw()
   chrome.draw()
   love.graphics.setCanvas()

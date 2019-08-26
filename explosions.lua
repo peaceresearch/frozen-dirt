@@ -22,22 +22,13 @@ explosions.spawn = function(target, blue, big, gray, transparent)
     xRandom = math.floor(math.random() * 2),
     yRandom = math.floor(math.random() * 2),
     clock = 0,
-    prefix = 'red'
+    prefix = 'blue'
   }
-  if blue then
-    explosion.prefix = 'blue'
-  elseif gray then
-    explosion.prefix = 'gray'
-  end
-  if transparent then
-    explosion.transparent = true
-  end
-  if explosion.xRandom == 0 then
-    explosion.xRandom = -1
-  end
-  if explosion.yRandom == 0 then
-    explosion.yRandom = -1
-  end
+  if blue then explosion.prefix = 'blue' end
+  if gray then explosion.prefix = 'gray' end
+  if transparent then explosion.transparent = true end
+  if explosion.xRandom == 0 then explosion.xRandom = -1 end
+  if explosion.yRandom == 0 then explosion.yRandom = -1 end
   if big then
     explosion.xRandom = explosion.xRandom * 2
     explosion.yRandom = explosion.yRandom * 2
@@ -79,6 +70,8 @@ explosions.draw = function()
     local explosion = explosions.explosions[i]
     local img = explosions.images[explosion.prefix][explosion.currentTexture]
     if explosion.transparent then
+			currentStencil = masks.half
+			love.graphics.stencil(setStencilMask, 'replace', 1)
       love.graphics.setStencilTest('greater', 0)
     end
     love.graphics.draw(img, explosion.x + gameX, explosion.y + gameY, 0, explosion.xRandom, explosion.yRandom, img:getWidth() / 2, img:getHeight() / 2)

@@ -1,8 +1,12 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'blue', 'bluebig', 'bluearrow', 'bluepill', 'gray', 'orange', 'orangebig'},
-	enemyTypes = {'fairyred', 'fairybig', 'chen', 'salamander', 'jackfrost'},
+	bulletTypes = {'small', 'arrow', 'bullet', 'big', 'big2', 'bolt'},
+	-- bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'redbolt', 'redbullet',
+	-- 	'gray', 'grayarrow', 'graypill', 'graybig', 'graypuff', 'graybig2',
+	-- 	'blue', 'bluebig', 'bluearrow', 'bluepill', 'bluebullet', 'bluepuff',
+	-- 	'orange', 'orangebig', 'orangepill', 'orangedouble', 'orangebullet', 'orangetriple', 'orangearrow', 'orangebolt'},
+	enemyTypes = {'cirno'},
 	bulletImages = {},
 	enemyImages = {},
 	killBullets = false,
@@ -15,7 +19,9 @@ stage = {
 
 currentWave = nil
 
-bossOffset = grid * 8
+bossOffset = grid * 7.75
+
+local glowScale = 1.5
 
 function stage.load()
 	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
@@ -69,6 +75,7 @@ end
 local function updateEnemy(index)
 	local enemy = stage.enemies[index]
 	if enemy then
+		enemy.sidesActive = false
 		if enemy.updateFunc then stage.enemies[index].updateFunc(stage.enemies[index]) end
 		if enemy.velocity then
 			enemy.x = enemy.x + enemy.velocity.x
@@ -98,18 +105,27 @@ local function drawEnemy(index)
 	local function drawBorder()
 		currentStencil = masks.quarter
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.purpleLight)
-		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * 1.1, stage.borderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
+		love.graphics.setColor(colors.blueDarkest)
+		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * glowScale * 1.1, stage.borderScale * glowScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
 		love.graphics.setColor(colors.white)
 	end
 	local function drawGlow()
-		local radius = 38
+		local radius = 38 * glowScale
+		local sideDiff = .75
 		currentStencil = masks.quarter
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.purple)
+		love.graphics.setColor(colors.blueDarkest)
+		if enemy.sidesActive then
+			love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff)
+			love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff)
+		end
 		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius)
 		currentStencil = masks.half
 		love.graphics.stencil(setStencilMask, 'replace', 1)
+		if enemy.sidesActive then
+			love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff - 12)
+			love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff - 12)
+		end
 		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius - 12)
 		love.graphics.setColor(colors.white)
 	end
@@ -120,10 +136,13 @@ local function drawEnemy(index)
 	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, borderScale, borderScale, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
 end
 
+local animateBulletInterval = 8
+
 function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	x = math.floor(x)
 	y = math.floor(y)
-	local bullet = hc.circle(x, y, stage.bulletImages[type]:getWidth() / 2)
+	width = stage.bulletImages[type]:getWidth() / 2
+	local bullet = hc.circle(x, y, width)
 	bullet.image = stage.bulletImages[type]
 	bullet.rotation = 0
 	bullet.clock = 0
@@ -133,8 +152,13 @@ function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	bullet.y = y
 	bullet.visible = true
 	bullet.color = 'red'
-	if string.find(string.lower(type), 'blue') then bullet.color = 'blue' end
+	if string.find(string.lower(type), 'blue') then bullet.color = 'blue'
+	elseif string.find(string.lower(type), 'gray') then bullet.color = 'gray' end
 	if initFunc then initFunc(bullet) end
+	if bullet.animatedByFlip then
+			bullet.scaleX = 1
+			if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
+	end
 	if updateFunc then bullet.updateFunc = updateFunc end
 	table.insert(stage.bullets, bullet)
 end
@@ -148,6 +172,9 @@ local function updateBullet(index)
 			bullet.y = bullet.y + bullet.velocity.y
 			bullet:moveTo(bullet.x, bullet.y)
 		end
+		if bullet.animatedByRotation then
+			if bullet.clock % animateBulletInterval == 0 then bullet.rotation = bullet.rotation + math.pi * math.random() end
+		end
 		bullet.clock = bullet.clock + 1
 		local bound = grid * 10
 		if bullet.y < gameY - bound or
@@ -157,7 +184,7 @@ local function updateBullet(index)
 			hc.remove(bullet)
 			table.remove(stage.bullets, index)
 		elseif stage.killBullets then
- 			explosions.spawn({x = bullet.x, y = bullet.y}, bullet.color == 'blue')
+ 			explosions.spawn({x = bullet.x, y = bullet.y}, bullet.color == 'blue', false, bullet.color == 'gray')
  			hc.remove(bullet)
  			table.remove(stage.bullets, index)
  		end
@@ -174,7 +201,9 @@ local function drawBullet(index)
 			end
 			love.graphics.setStencilTest('greater', 0)
 		end
-		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+		local scaleX = 1
+		if bullet.scaleX then scaleX = bullet.scaleX end
+		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, scaleX, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
 		if bullet.transparent or bullet.superTransparent then
 			if bullet.superTransparent then
 				currentStencil = masks.half
@@ -186,9 +215,50 @@ local function drawBullet(index)
 end
 
 local function updateWaves()
-	if not currentWave then currentWave = enemies.boss end
+	if not currentWave then currentWave = enemies.one end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
+end
+
+function spawnBoss(type, attacks, moves)
+	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
+		enemy.angle = math.pi / 2
+		enemy.speed = 3.1
+		enemy.currentAttack = 1
+		enemy.health = 2000
+		enemy.started = false
+		bossHealthInit = enemy.health
+	end, function(enemy)
+		if enemy.started then
+			local current = 1
+			for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
+			if enemy.currentAttack ~= current then
+				stage.killBullets = true
+				enemy.clock = -60
+				enemy.lastHealth = enemy.health
+				enemy.currentAttack = current
+			end
+			if enemy.clock >= 0 then
+				attacks[enemy.currentAttack](enemy)
+				moves[enemy.currentAttack](enemy)
+			end
+			bossHealth = enemy.health
+		else
+			if enemy.lastHealth then enemy.health = enemy.lastHealth end
+			enemy.speed = enemy.speed - .05
+			if enemy.speed <= 0 then
+				enemy.speed = 0
+				enemy.clock = -1
+				enemy.started = true
+				enemy.angle = 0
+				enemy.y = math.floor(enemy.y)
+			end
+			enemy.velocity = {
+				x = math.cos(enemy.angle) * enemy.speed,
+				y = math.sin(enemy.angle) * enemy.speed
+			}
+		end
+	end)
 end
 
 function stage.update()
@@ -209,6 +279,7 @@ function stage.update()
 	elseif stage.borderScale < 1 then
 		stage.borderScaleFlipped = false
 	end
+
 end
 
 function stage.draw()

@@ -44,15 +44,18 @@ local function drawBorder()
 end
 
 local function drawScore()
-  local x = gameX - grid * 1.25
+	love.graphics.setFont(fontBig)
+  local x = gameX - grid
   local y = grid
+	local yOffset = grid + 2
   local scoreStr = 'Hi Score'
-  local scoreNum = '000000000'
+  local scoreNum = '00000000'
   drawLabel(scoreStr, x - #scoreStr * 8, y)
-  drawLabel(scoreNum, x - #scoreNum * 8, y + grid)
-  x = gameX + gameWidth + grid * 1.25
+  drawLabel(scoreNum, x - #scoreNum * 8, y + yOffset)
+  x = gameX + gameWidth + grid
   drawLabel('Score', x, y)
-  drawLabel('000000000', x, y + grid)
+  drawLabel('00000000', x, y + yOffset)
+  love.graphics.setFont(font)
 end
 
 local function drawLives()
@@ -76,19 +79,19 @@ local function drawBombs()
 end
 
 local function drawDebug()
-  love.graphics.setFont(font)
+  -- love.graphics.setFont(font)
 	local x = grid
   local y = winHeight - 4
   local drawDebug
   drawDebug = function()
-    drawLabel("pshot:" .. tostring(#player.bullets), x, y - 12 * 4 - 8)
-    drawLabel("eshot:" .. tostring(#stage.bullets), x, y - 12 * 3 - 8)
-    drawLabel("enemy:" .. tostring(#stage.enemies), x, y - 12 * 2 - 8)
-    drawLabel("explo:" .. tostring(#explosions.explosions), x, y - 12 * 1 - 8)
+    drawLabel("pshot:" .. tostring(#player.bullets), x, y - 12 * 4 - 8, 'blueDark')
+    drawLabel("eshot:" .. tostring(#stage.bullets), x, y - 12 * 3 - 8, 'blueDark')
+    drawLabel("enemy:" .. tostring(#stage.enemies), x, y - 12 * 2 - 8, 'blueDark')
+    drawLabel("explo:" .. tostring(#explosions.explosions), x, y - 12 * 1 - 8, 'blueDark')
   end
-  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid - grid + 6, 'blueDarkest', {type = 'right', width = gameX - grid})
-  -- drawDebug()
-  love.graphics.setFont(fontBig)
+  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid - 8, 'white', {type = 'right', width = gameX - grid})
+  drawDebug()
+  -- love.graphics.setFont(fontBig)
 end
 
 local function drawBoss()
@@ -107,26 +110,17 @@ local function drawBoss()
 	    love.graphics.rectangle('fill', x, y + height - 1, width, 1)
 	    love.graphics.rectangle('fill', x, y, 1, height)
 	    love.graphics.rectangle('fill', x + width - 1, y, 1, height)
-	    love.graphics.setColor(colors.red)
+	    love.graphics.setColor(colors.blueLight)
 	    love.graphics.rectangle('fill', x + 1, y + 1, healthWidth, height - 2)
-	    love.graphics.setColor(colors.redLight)
+	    love.graphics.setColor(colors.blueLightest)
 	    love.graphics.rectangle('fill', x + 1, y + 1, healthWidth, 1)
-	    -- love.graphics.setStencilTest('greater', 0)
-	    -- love.graphics.setColor(colors.yellow)
-	    -- love.graphics.rectangle('fill', x + 1, y + 1, healthWidth, height - 2)
-	    -- love.graphics.setStencilTest()
 	    love.graphics.setColor(colors.black)
 	    love.graphics.rectangle('fill', x + healthWidth + 1, y + 1, 1, height - 2)
 	    love.graphics.setColor(colors.white)
 	  end
 	end
 	bar()
-  love.graphics.setFont(megaten)
-	y = y + 10
-  drawLabel('Sector Bootes', x, y)
-	drawLabel('Jack Frost', gameX, y, false, {type = 'right', width = gameWidth - 4})
-  drawLabel('Agilao', gameX, y + 12, false, {type = 'right', width = gameWidth - 4})
-  love.graphics.setFont(fontBig)
+	y = y + 12
 end
 
 chrome.update = function()
@@ -135,7 +129,7 @@ end
 
 chrome.draw = function()
   drawBorder()
-  -- drawScore()
+  drawScore()
   -- drawLives()
   -- drawBombs()
   drawDebug()

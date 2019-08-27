@@ -561,35 +561,81 @@ enemies.one = enemyObj(function()
 		-- 	end
 		-- end,
 		
+		-- function(enemy)
+		-- 	local function spawnBullets()
+		-- 		local speed = 4
+		-- 		local function spawnRay(diff)
+		-- 			local baseAngle = getAngle(enemy, player)
+		-- 			local angle = baseAngle - math.pi
+		-- 			local raySpeed = speed + .2 * diff
+		-- 			for i = 1, enemy.ringCount do
+		-- 				if angle > 0 and angle < math.pi then
+		-- 					stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
+		-- 						bullet.velocity = {
+		-- 							x = math.cos(angle) * raySpeed,
+		-- 							y = math.sin(angle) * raySpeed
+		-- 						}
+		-- 						bullet.animatedByRotation = true
+		-- 						if diff == -1 then bullet.visible = false end
+		-- 					end)
+		-- 				end
+		-- 				angle = angle + math.tau / enemy.ringCount
+		-- 			end
+		-- 		end
+		-- 		for i = 1, 6 do
+		-- 			spawnRay(i - 2)
+		-- 		end
+		-- 	end
+		-- 	local interval = 20
+		-- 	local max = interval * 12
+		-- 	local limit = max - interval
+		-- 	if enemy.clock % interval == 0 and enemy.clock % max < limit then
+		-- 		if enemy.clock % max == 0 then enemy.ringCount = 30 end
+		-- 		spawnBullets()
+		-- 		enemy.ringCount = enemy.ringCount + 3
+		-- 	end
+		-- end,
+
 		function(enemy)
-			local function spawnBullets()
-				local speed = 3.5
-				local function spawnRay(diff)
-					local angle = -math.pi / 2
-					local raySpeed = speed + .2 * diff
-					for i = 1, enemy.ringCount do
-						if angle > 0 and angle < math.pi then
-							stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
-								bullet.velocity = {
-									x = math.cos(angle) * raySpeed,
-									y = math.sin(angle) * raySpeed
-								}
-								bullet.animatedByRotation = true
-								if diff == -1 then bullet.visible = false end
-							end)
-						end
-						angle = angle + math.tau / enemy.ringCount
-					end
+			enemy.sidesActive = true
+			local function spawnBullet(opposite, other)
+				local angle = enemy.bulletAngle
+				local x = enemy.x + bossOffset
+				if other then
+					angle = enemy.bulletAngleOther
+					x = enemy.x - bossOffset
 				end
-				for i = 1, 6 do
-					spawnRay(i - 2)
+				local offset = 10
+				local offsetAngle = angle + math.pi / 2
+				if opposite then
+					offsetAngle = offsetAngle + math.pi
 				end
+				if other then x = enemy.x - bossOffset end
+				x = x + math.cos(offsetAngle) * offset
+				local y = enemy.y + math.sin(offsetAngle) * offset
+				local speed = 5.5
+				stage.spawnBullet('bolt', x, y, function(bullet)
+					bullet.velocity = {
+						x = math.cos(angle) * speed,
+						y = math.sin(angle) * speed
+					}
+					bullet.animatedByFlip = true
+					bullet.rotation = angle
+				end)
 			end
-			local interval = 25
+			local interval = 5
+			local limit = interval * 3
 			if enemy.clock % interval == 0 then
-				if enemy.clock == 0 then enemy.ringCount = 30 end
-				spawnBullets()
-				enemy.ringCount = enemy.ringCount + 1
+				local isOther = enemy.clock % (limit * 2) >= limit
+				if enemy.clock % limit == 0 then
+					enemy.bulletAngle = getAngle({x = enemy.x + bossOffset, y = enemy.y}, player)
+					enemy.bulletAngleOther = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
+					local x = enemy.x + bossOffset
+					if isOther then x = enemy.x - bossOffset end
+					explosions.spawn({x = x, y = enemy.y}, true, true)
+				end
+				spawnBullet(false, isOther)
+				spawnBullet(true, isOther)
 			end
 		end
 
@@ -638,6 +684,11 @@ enemies.one = enemyObj(function()
 		-- end,
 
 		function(enemy)
+			returnToCenter(enemy)
+		end,
+
+		function(enemy)
+			returnToCenter(enemy)
 		end
 
 	}

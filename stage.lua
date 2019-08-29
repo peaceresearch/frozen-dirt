@@ -228,7 +228,7 @@ end
 function spawnBoss(type, attacks, moves)
 	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
 		enemy.angle = math.pi / 2
-		enemy.speed = 3.1
+		enemy.speed = 3.25
 		enemy.currentAttack = 1
 		enemy.health = 2000
 		enemy.started = false

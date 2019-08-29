@@ -813,55 +813,120 @@ enemies.one = enemyObj(function()
 		-- 	end
 		-- 	if enemy.clock % interval == 0 then spawnBullets() end
 		-- end,
+		--
+		-- function(enemy)
+		-- 	local function spawnBullets(opposite, isFat)
+		-- 		local x = enemy.x - bossOffset
+		-- 		local initAngle = enemy.initBulletAngle
+		-- 		local angle = enemy.bulletAngle
+		-- 		local count = 11
+		-- 		local speed = 5
+		-- 		local mod = math.pi / 25
+		-- 		if opposite then
+		-- 			x = enemy.x + bossOffset
+		-- 			initAngle = enemy.initBulletAngleOther
+		-- 			angle = enemy.bulletAngleOther
+		-- 		end
+		-- 		angle = angle + enemy.bulletMod * count / 2
+		-- 		local img = 'bullet'
+		-- 		if isFat then img = 'bolt' end
+		-- 		for i = 1, count do
+		-- 			stage.spawnBullet(img, x, enemy.y, function(bullet)
+		-- 				bullet.velocity = {
+		-- 					x = math.cos(angle) * speed,
+		-- 					y = math.sin(angle) * speed
+		-- 				}
+		-- 				bullet.rotation = angle
+		-- 				bullet.animatedByFlip = true
+		-- 				if i == 1 then bullet.visible = false end
+		-- 			end)
+		-- 			angle = angle - enemy.bulletMod
+		-- 		end
+		-- 	end
+		-- 	if enemy.clock == 0 then
+		-- 		enemy.bulletAngle = getAngle({x = enemy.x - bossOffset, y = enemy.y}, {x = gameWidth * .75, y = gameHeight})
+		-- 		enemy.bulletAngleOther = getAngle({x = enemy.x + bossOffset, y = enemy.y}, {x = gameWidth / 4, y = gameHeight})
+		-- 		enemy.initBulletAngle = enemy.bulletAngle
+		-- 		enemy.initBulletAngleOther = enemy.bulletAngleOther
+		-- 		enemy.bulletDirection = false
+		-- 		enemy.bulletMin = .135
+		-- 		enemy.bulletMax = .215
+		-- 		enemy.bulletMod = enemy.bulletMax
+		-- 	end
+		-- 	local interval = 5
+		-- 	local limit = 60
+		-- 	if enemy.clock % interval == 0 then
+		-- 		local isFat = enemy.clock >= limit
+		-- 		spawnBullets(false, isFat)
+		-- 		spawnBullets(true, isFat)
+		-- 		local expoLimit = interval * 4
+		-- 		if enemy.clock % expoLimit == 0 then explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
+		-- 		elseif enemy.clock % expoLimit == expoLimit / 2 then explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true) end
+		--
+		-- 		local modMod = .005
+		-- 		if enemy.bulletDirection then
+		-- 			enemy.bulletMod = enemy.bulletMod + modMod
+		-- 			if enemy.bulletMod > enemy.bulletMax then enemy.bulletDirection = false end
+		-- 		else
+		-- 			enemy.bulletMod = enemy.bulletMod - modMod
+		-- 			if enemy.bulletMod <= enemy.bulletMin then enemy.bulletDirection = true end
+		-- 		end
+		--
+		-- 	end
+		-- end,
+		--
+		-- function(enemy)
+		-- 	local count = 13
+		-- 	local mod = math.pi / 20
+		-- 	local speed = 5
+		-- 	local function spawnBig()
+		-- 		local angle = enemy.baseAngle + math.pi
+		-- 		for i = 1, count do
+		-- 			stage.spawnBullet('bolt', enemy.x, enemy.y, function(bullet)
+		-- 				bullet.velocity = {
+		-- 					x = math.cos(angle) * speed,
+		-- 					y = math.sin(angle) * speed
+		-- 				}
+		-- 				bullet.rotation = angle
+		-- 				bullet.animatedByFlip = true
+		-- 			end)
+		-- 			angle = angle + mod
+		-- 		end
+		-- 	end
+		-- 	local function spawnSmall()
+		-- 		local angle = enemy.baseAngle
+		-- 		for i = 1, count do
+		-- 			stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
+		-- 				bullet.velocity = {
+		-- 					x = math.cos(angle) * speed,
+		-- 					y = math.sin(angle) * speed
+		-- 				}
+		-- 				bullet.animatedByRotation = true
+		-- 			end)
+		-- 			angle = angle + mod
+		-- 		end
+		-- 	end
+		-- 	local interval = 12
+		-- 	if enemy.clock == 0 then
+		-- 		enemy.baseAngle = math.pi / 4
+		-- 		enemy.baseDirection = 1
+		-- 	end
+		-- 	local baseMod = .2
+		-- 	if enemy.clock % interval == 0 then
+		-- 		spawnBig()
+		-- 		spawnSmall()
+		-- 		if enemy.baseDirection == 1 then
+		-- 			enemy.baseAngle = enemy.baseAngle - baseMod
+		-- 		else
+		-- 			enemy.baseAngle = enemy.baseAngle + baseMod
+		-- 		end
+		-- 		if enemy.clock % (60 * 5) == 0 then enemy.baseDirection = enemy.baseDirection * -1 end
+		-- 	end
+		-- end,
 
 		function(enemy)
-			local function spawnBullets(opposite, isFat)
-				local x = enemy.x - bossOffset
-				local initAngle = enemy.initBulletAngle
-				local angle = enemy.bulletAngle
-				local count = 17
-				local speed = 5
-				local mod = math.pi / 25
-				if opposite then
-					x = enemy.x + bossOffset
-					initAngle = enemy.initBulletAngleOther
-					angle = enemy.bulletAngleOther
-				end
-				angle = angle + mod * count / 2
-				local img = 'bullet'
-				if isFat then img = 'bolt' end
-				for i = 1, count do
-					stage.spawnBullet(img, x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-						bullet.rotation = angle
-						bullet.animatedByFlip = true
-						if i == 1 then bullet.visible = false end
-					end)
-					angle = angle - mod
-				end
-			end
-			if enemy.clock == 0 then
-				enemy.bulletAngle = getAngle({x = enemy.x - bossOffset, y = enemy.y}, {x = gameWidth * .75, y = gameHeight})
-				enemy.bulletAngleOther = getAngle({x = enemy.x + bossOffset, y = enemy.y}, {x = gameWidth / 4, y = gameHeight})
-				enemy.initBulletAngle = enemy.bulletAngle
-				enemy.initBulletAngleOther = enemy.bulletAngleOther
-			end
-			local interval = 5
-			local limit = 60
-			if enemy.clock % interval == 0 then
-				local isFat = enemy.clock >= limit
-				spawnBullets(false, isFat)
-				spawnBullets(true, isFat)
-				local expoLimit = interval * 4
-				if enemy.clock % expoLimit == 0 then explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
-				elseif enemy.clock % expoLimit == expoLimit / 2 then explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true) end
-			end
+
 		end
-
-
 
 	}
 
@@ -930,9 +995,17 @@ enemies.one = enemyObj(function()
 		-- function(enemy)
 		-- 	sideSideMove(enemy)
 		-- end,
+		--
+		-- function(enemy)
+		-- 	returnToCenter(enemy)
+		-- end,
+		--
+		-- function(enemy)
+		-- 	sideSideMove(enemy)
+		-- end,
 
 		function(enemy)
-			-- sideSideMove(enemy)
+			
 		end
 
 	}

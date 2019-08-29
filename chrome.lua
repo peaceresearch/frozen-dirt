@@ -148,5 +148,5 @@ chrome.draw = function()
   -- drawBombs()
   drawDebug()
   if bossHealth > 0 then drawBoss() end
-	-- drawPortraits()
+	drawPortraits()
 end

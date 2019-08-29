@@ -2,7 +2,7 @@ math.tau = math.pi * 2
 hc = require('lib/hc')
 winWidth = 640
 winHeight = 480
-gameScale = 1
+gameScale = 2
 grid = 16
 gameWidth = grid * 24
 gameHeight = grid * 28
@@ -93,7 +93,7 @@ getAngle = function(b, a)
   return math.atan2(a.y - b.y, a.x - b.x)
 end
 love.load = function()
-  love.window.setTitle('bullet hell engines server contest thing')
+  love.window.setTitle('FROZEN DIRT')
   container = love.graphics.newCanvas(winWidth, winHeight)
   container:setFilter('nearest', 'nearest')
   love.window.setMode(winWidth * gameScale, winHeight * gameScale)
@@ -106,6 +106,7 @@ love.load = function()
   background.load()
   player.load()
   stage.load()
+	chrome.load()
   return explosions.load()
 end
 love.update = function(d)

@@ -21,7 +21,7 @@ currentWave = nil
 
 bossOffset = grid * 7.75
 
-local glowScale = 1.5
+local glowScale = 2
 
 function stage.load()
 	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
@@ -116,15 +116,15 @@ local function drawEnemy(index)
 		love.graphics.stencil(setStencilMask, 'replace', 1)
 		love.graphics.setColor(colors.blueDarkest)
 		if enemy.sidesActive then
-			love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff)
-			love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff)
+			-- love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff)
+			-- love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff)
 		end
 		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius)
 		currentStencil = masks.half
 		love.graphics.stencil(setStencilMask, 'replace', 1)
 		if enemy.sidesActive then
-			love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff - 12)
-			love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff - 12)
+			-- love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff - 12)
+			-- love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff - 12)
 		end
 		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius - 12)
 		love.graphics.setColor(colors.white)
@@ -155,10 +155,10 @@ function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	if string.find(string.lower(type), 'blue') then bullet.color = 'blue'
 	elseif string.find(string.lower(type), 'gray') then bullet.color = 'gray' end
 	if initFunc then initFunc(bullet) end
-	if bullet.animatedByFlip then
-			bullet.scaleX = 1
-			if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
-	end
+	-- if bullet.animatedByFlip then
+	-- 		bullet.scaleX = 1
+	-- 		if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
+	-- end
 	if updateFunc then bullet.updateFunc = updateFunc end
 	table.insert(stage.bullets, bullet)
 end
@@ -172,8 +172,13 @@ local function updateBullet(index)
 			bullet.y = bullet.y + bullet.velocity.y
 			bullet:moveTo(bullet.x, bullet.y)
 		end
-		if bullet.animatedByRotation then
-			if bullet.clock % animateBulletInterval == 0 then bullet.rotation = bullet.rotation + math.pi * math.random() end
+		if bullet.clock % animateBulletInterval == 0 then
+			if bullet.animatedByRotation then
+				bullet.rotation = bullet.rotation + math.pi * math.random()
+			elseif bullet.animatedByFlip then
+				bullet.scaleX = 1
+				if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
+			end
 		end
 		bullet.clock = bullet.clock + 1
 		local bound = grid * 10

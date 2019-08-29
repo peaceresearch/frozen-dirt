@@ -3,11 +3,20 @@ chrome = {
 		border = love.graphics.newImage('img/chrome/border.png'),
     logo = love.graphics.newImage('img/chrome/logo.png'),
     bomb = love.graphics.newImage('img/chrome/bomb.png'),
-    life = love.graphics.newImage('img/chrome/life.png')
+    life = love.graphics.newImage('img/chrome/life.png'),
+		portraits = {
+			cirno = love.graphics.newImage('img/portraits/cirno.png')
+		}
   },
   lastTime = 0,
   fps = 0
 }
+
+chrome.load = function()
+  for type, img in pairs(chrome.images.portraits) do
+    chrome.images.portraits[type]:setFilter('nearest', 'nearest')
+  end
+end
 
 local function updateFps()
   if gameClock % 30 == 0 then
@@ -123,6 +132,11 @@ local function drawBoss()
 	y = y + 12
 end
 
+local function drawPortraits()
+	local scale = 1
+  love.graphics.draw(chrome.images.portraits.cirno, grid * 25, grid * 8, 0, scale, scale)
+end
+
 chrome.update = function()
   updateFps()
 end
@@ -134,4 +148,5 @@ chrome.draw = function()
   -- drawBombs()
   drawDebug()
   if bossHealth > 0 then drawBoss() end
+	-- drawPortraits()
 end

@@ -6,7 +6,7 @@ stage = {
 	-- 	'gray', 'grayarrow', 'graypill', 'graybig', 'graypuff', 'graybig2',
 	-- 	'blue', 'bluebig', 'bluearrow', 'bluepill', 'bluebullet', 'bluepuff',
 	-- 	'orange', 'orangebig', 'orangepill', 'orangedouble', 'orangebullet', 'orangetriple', 'orangearrow', 'orangebolt'},
-	enemyTypes = {'cirno'},
+	enemyTypes = {'cirno', 'fairyred'},
 	bulletImages = {},
 	enemyImages = {},
 	killBullets = false,
@@ -29,14 +29,22 @@ function stage.load()
 		stage.enemyImages[stage.enemyTypes[i]] = {
 			idle1 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle1.png'),
 			idle2 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle2.png'),
-			idle3 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle3.png')
+			idle3 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle3.png'),
+			left1 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/left1.png'),
+			left2 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/left2.png'),
+			right1 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/right1.png'),
+			right2 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/right2.png'),
 		}
+		if stage.enemyTypes[i] == 'cirno' then
+			stage.enemyImages[stage.enemyTypes[i]].idle4 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle4.png')
+		else
+			stage.enemyImages[stage.enemyTypes[i]].left3 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/left3.png')
+			stage.enemyImages[stage.enemyTypes[i]].right3 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/right3.png')
+		end
 	end
 	for type, img in pairs(stage.bulletImages) do stage.bulletImages[type]:setFilter('nearest', 'nearest') end
 	for type, img in pairs(stage.enemyImages) do
-		for jType, jImg in pairs(stage.enemyImages[type]) do
-			stage.enemyImages[type][jType]:setFilter('nearest', 'nearest')
-		end
+		for jType, jImg in pairs(stage.enemyImages[type]) do stage.enemyImages[type][jType]:setFilter('nearest', 'nearest') end
 	end
 	stage.border:setFilter('nearest', 'nearest')
 end
@@ -49,10 +57,13 @@ function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
 	enemy.images = stage.enemyImages[type]
 	enemy.colliderType = 'enemy'
 	enemy.clock = 0
-	enemy.health = 10
+	enemy.health = 0
 	enemy.x = x
 	enemy.y = y
+	enemy.lastX = x
 	enemy.rotation = 0
+	enemy.movingLeftClock = 0
+	enemy.movingRightClock = 0
 	if initFunc then initFunc(enemy) end
 	if updateFunc then enemy.updateFunc = updateFunc end
 	table.insert(stage.enemies, enemy)
@@ -82,12 +93,46 @@ local function updateEnemy(index)
 			enemy.y = enemy.y + enemy.velocity.y
 			enemy:moveTo(enemy.x, enemy.y)
 		end
+
 		local img = enemy.images.idle1
+
 		local interval = aniTime * 4
-		if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle2
-		elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3 end
+		local sideDiff = .2
+		local sideMax = sideDiff * 1.8
+		local sideAbs = math.abs(enemy.velocity.x)
+		if enemy.isBoss then
+			if enemy.velocity and sideAbs >= sideDiff then
+				if enemy.x < enemy.lastX then
+					img = enemy.images.left1
+					if sideAbs >= sideMax then img = enemy.images.left2 end
+				elseif enemy.x > enemy.lastX then
+					img = enemy.images.right1
+					if sideAbs >= sideMax then img = enemy.images.right2 end
+				end
+			elseif enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2 then img = enemy.images.idle2
+			elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3
+			elseif enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle4 end
+		else
+			if enemy.velocity and sideAbs >= sideDiff then
+				if enemy.x < enemy.lastX then
+					img = enemy.images.left1
+					if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.left2
+					elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.left3 end
+				elseif enemy.x > enemy.lastX then
+					img = enemy.images.right1
+					if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.right2
+					elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.right3 end
+				end
+			else
+				if (enemy.clock % interval >= aniTime and enemy.clock % interval < aniTime * 2) or enemy.clock % interval >= aniTime * 3 then img = enemy.images.idle2
+				elseif enemy.clock % interval >= aniTime * 2 and enemy.clock % interval < aniTime * 3 then img = enemy.images.idle3 end
+			end
+		end
+
 		enemy.image = img
+
 		enemy.clock = enemy.clock + 1
+		enemy.lastX = enemy.x
 		local bounds = 1.5
 		if enemy.y < -enemy.image:getHeight() * bounds or
 			enemy.y > gameHeight + enemy.image:getHeight() * bounds or
@@ -104,36 +149,31 @@ local function drawEnemy(index)
 	local enemy = stage.enemies[index]
 	local function drawBorder()
 		currentStencil = masks.quarter
+		local tempBorderScale = 1.5
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.blueDarkest)
-		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * glowScale * 1.1, stage.borderScale * glowScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
+		love.graphics.setColor(colors.blue)
+		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * tempBorderScale * 1.1, stage.borderScale * tempBorderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
 		love.graphics.setColor(colors.white)
 	end
 	local function drawGlow()
-		local radius = 38 * glowScale
-		local sideDiff = .75
+		local radius = 24
+		if enemy.isBoss then radius = 38 end
 		currentStencil = masks.quarter
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.blueDarkest)
-		if enemy.sidesActive then
-			-- love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff)
-			-- love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff)
-		end
-		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius)
+		love.graphics.setColor(colors.blue)
+		love.graphics.circle('fill', enemy.x + gameX, enemy.y + gameY, radius)
 		currentStencil = masks.half
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		if enemy.sidesActive then
-			-- love.graphics.circle('fill', enemy.x + gameX - bossOffset, enemy.y + gameY, radius * sideDiff - 12)
-			-- love.graphics.circle('fill', enemy.x + gameX + bossOffset, enemy.y + gameY, radius * sideDiff - 12)
-		end
-		love.graphics.circle('fill', enemy.x + gameX - 3, enemy.y + gameY, radius - 12)
+		love.graphics.circle('fill', enemy.x + gameX, enemy.y + gameY, radius - 10)
 		love.graphics.setColor(colors.white)
 	end
 	love.graphics.setStencilTest('greater', 0)
-	drawGlow()
-	drawBorder()
+	if enemy.isBoss then
+		drawGlow()
+		drawBorder()
+	end
 	love.graphics.setStencilTest()
-	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, borderScale, borderScale, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
+	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, 1, 1, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
 end
 
 local animateBulletInterval = 8
@@ -220,19 +260,21 @@ local function drawBullet(index)
 end
 
 local function updateWaves()
-	if not currentWave then currentWave = enemies.one end
+	if not currentWave then currentWave = enemies.stageOneBossOne end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
 end
 
-function spawnBoss(type, attacks, moves)
+function spawnBoss(type, attacks, moves, suicide)
 	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
 		enemy.angle = math.pi / 2
-		enemy.speed = 3.25
+		enemy.speed = 3.2
 		enemy.currentAttack = 1
-		enemy.health = 2000
+		enemy.health = 325
 		enemy.started = false
 		bossHealthInit = enemy.health
+		enemy.isBoss = true
+		enemy.suicide = suicide
 	end, function(enemy)
 		if enemy.started then
 			local current = 1

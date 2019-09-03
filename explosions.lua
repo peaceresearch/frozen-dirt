@@ -1,6 +1,6 @@
 explosions = {
   explosions = {},
-  types = {'red', 'blue', 'gray'},
+  types = {'blue', 'gray'},
   images = {}
 }
 

@@ -5,7 +5,8 @@ chrome = {
     bomb = love.graphics.newImage('img/chrome/bomb.png'),
     life = love.graphics.newImage('img/chrome/life.png'),
 		portraits = {
-			cirno = love.graphics.newImage('img/portraits/cirno.png')
+			cirno = love.graphics.newImage('img/portraits/cirno.png'),
+			irate = love.graphics.newImage('img/portraits/irate.png')
 		}
   },
   lastTime = 0,
@@ -28,34 +29,15 @@ local function updateFps()
   end
 end
 
-local function drawLabel(input, x, y, labelColor, alignObject)
-  input = string.upper(input)
-  local color = colors.white
-	local align = 'left'
-	local limit = 256
-  if labelColor then color = colors[labelColor] end
-	if alignObject then
-		align = alignObject.type
-		limit = alignObject.width
-	end
-	love.graphics.setColor(colors.black)
-  love.graphics.printf(input, x + 1, y + 1, limit, align)
-	love.graphics.setColor(color)
-  love.graphics.printf(input, x, y, limit, align)
-	love.graphics.setColor(colors.white)
-  -- love.graphics.print({colors.black, input}, x + 1, y + 1, 0, 1, 1, oX, 0)
-	-- love.graphics.print({color, input}, x, y, 0, 1, 1, oX, 0)
-end
-
 local function drawBorder()
   love.graphics.draw(chrome.images.border, 0, 0)
-  -- love.graphics.draw(chrome.images.logo, winWidth - 98 - grid, winHeight - 22 - grid * 2)
+  -- love.graphics.draw(chrome.images.logo, 10, grid)
 end
 
 local function drawScore()
 	love.graphics.setFont(fontBig)
   local x = gameX - grid
-  local y = grid
+  local y = 13
 	local yOffset = grid + 2
   local scoreStr = 'Hi Score'
   local scoreNum = '00000000'
@@ -89,18 +71,18 @@ end
 
 local function drawDebug()
   -- love.graphics.setFont(font)
-	local x = grid
-  local y = winHeight - 4
-  local drawDebug
-  drawDebug = function()
-    drawLabel("pshot:" .. tostring(#player.bullets), x, y - 12 * 4 - 8, 'blueDark')
-    drawLabel("eshot:" .. tostring(#stage.bullets), x, y - 12 * 3 - 8, 'blueDark')
-    drawLabel("enemy:" .. tostring(#stage.enemies), x, y - 12 * 2 - 8, 'blueDark')
-    drawLabel("explo:" .. tostring(#explosions.explosions), x, y - 12 * 1 - 8, 'blueDark')
-  end
-  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid - 8, 'white', {type = 'right', width = gameX - grid})
-  drawDebug()
+	-- local x = grid
+  -- local y = winHeight - 4
+  -- local drawDebug
+  -- drawDebug = function()
+  --   drawLabel("pshot:" .. tostring(#player.bullets), x, y - 12 * 4 - 8, 'blueDark')
+  --   drawLabel("eshot:" .. tostring(#stage.bullets), x, y - 12 * 3 - 8, 'blueDark')
+  --   drawLabel("enemy:" .. tostring(#stage.enemies), x, y - 12 * 2 - 8, 'blueDark')
+  --   drawLabel("explo:" .. tostring(#explosions.explosions), x, y - 12 * 1 - 8, 'blueDark')
+  -- end
+  -- drawDebug()
   -- love.graphics.setFont(fontBig)
+  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid - 8, false, {type = 'right', width = gameX - 12})
 end
 
 local function drawBoss()
@@ -113,7 +95,7 @@ local function drawBoss()
 	    local height = 10
 	    love.graphics.setColor(colors.black)
 	    love.graphics.setStencilTest('greater', 0)
-	    love.graphics.rectangle('fill', x, y, width, height)
+	    -- love.graphics.rectangle('fill', x, y, width, height)
 	    love.graphics.setStencilTest()
 	    love.graphics.rectangle('fill', x, y, width, 1)
 	    love.graphics.rectangle('fill', x, y + height - 1, width, 1)
@@ -133,8 +115,68 @@ local function drawBoss()
 end
 
 local function drawPortraits()
-	local scale = 1
-  love.graphics.draw(chrome.images.portraits.cirno, grid * 25, grid * 8, 0, scale, scale)
+	local irateScale = .75
+	love.graphics.draw(chrome.images.portraits.cirno, gameX + grid * 14, gameY + grid * 8)
+  love.graphics.draw(chrome.images.portraits.irate, gameX + grid * 22.5, gameY + grid * 5, 0, irateScale, irateScale)
+end
+
+local function drawClear()
+	local x = gameX + gameWidth / 2
+	local y = gameY + grid * 8.5
+	love.graphics.setFont(fontBig)
+	local stageClear = 'Stage #3 Cleared'
+	drawLabel(stageClear, x - #stageClear * 8 / 2, y)
+	love.graphics.setFont(font)
+	y = y + grid * 2.25
+	local noMiss = 'No Miss 5000'
+	drawLabel(noMiss, x - #noMiss * 8 / 2, y)
+	y = y + 12
+	local noBomb = 'No Bomb 2500'
+	drawLabel(noBomb, x - #noBomb * 8 / 2, y)
+	y = y + 12
+	local extra = 'Strong! 1500'
+	drawLabel(extra, x - #extra * 8 / 2, y)
+	love.graphics.setFont(fontBig)
+	y = y + grid * 1.5 + 2
+	local total = 'Total Bonus 9000'
+	drawLabel(total, x - #total * 8 / 2, y)
+	y = y + grid * 3
+	local next = 'Next Baka Get!'
+	drawLabel(next, x - #next * 8 / 2, y)
+	love.graphics.setFont(font)
+end
+
+local function drawStages()
+
+	local function current()
+		love.graphics.setFont(fontBig)
+		local stageStr = tostring(currentStage) .. '/9'
+		local x = gameX + 4
+		local y = winHeight - grid * 2 - 3
+		local limit = grid * 2.5
+		if player.x < #stageStr * 8 + 4 + limit and player.y > gameHeight - 4 - 8 - limit then
+			currentStencil = masks.quarter
+			love.graphics.stencil(setStencilMask, 'replace', 1)
+			love.graphics.setStencilTest('greater', 0)
+		end
+		drawLabel(stageStr, x, y)
+		love.graphics.setFont(font)
+		love.graphics.setStencilTest()
+	end
+
+	local function goingToBoss()
+		love.graphics.setFont(fontBig)
+		local str = 'A Baka Approaches'
+		local x = gameX + gameWidth / 2 - #str * 8 / 2
+		local y = gameHeight / 2 - 8
+		drawLabel(str, x, y)
+		love.graphics.setFont(font)
+		goingToBossClock = goingToBossClock - 1
+	end
+
+	current()
+	if goingToBossClock > 0 then goingToBoss() end
+
 end
 
 chrome.update = function()
@@ -143,10 +185,12 @@ end
 
 chrome.draw = function()
   drawBorder()
+	-- drawPortraits()
   drawScore()
+  drawDebug()
+	drawStages()
   -- drawLives()
   -- drawBombs()
-  drawDebug()
   if bossHealth > 0 then drawBoss() end
-	drawPortraits()
+	-- drawClear()
 end

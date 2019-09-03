@@ -9,40 +9,47 @@ gameHeight = grid * 28
 gameX = winWidth / 2 - gameWidth / 2
 gameY = grid
 colors = {
-  black = '222034',
-  purple = '45283c',
   purpleLight = '76428a',
   pink = 'd77bba',
-  red = 'ac3232',
   redLight = 'd95763',
-  peach = 'eec39a',
-  blueLightest = 'cbdbfc',
-	blueLight = '5fcde4',
   blueMid = '639bff',
 	blueDark = '306082',
 	blueDarkest = '3f3f74',
   blue = '5b6ee1',
-  brown = '854c30',
-  green = '346524',
-  greenLight = '6daa2c',
-  blue = '597dce',
   orange = 'd27d2c',
-  gray = '757161',
-  grayLight = '8595a1',
 	grayLightest = '9badb7',
   grayDark = '4e4a4e',
   yellow = 'dad45e',
-  white = 'ffffff'
+
+	-- here be new colors
+  black = '140c1c',
+  purple = '442434',
+  grayLight = '8595a1',
+	blue = '30346d',
+	blueLight = '597dce',
+  blueLightest = '6dc2ca',
+  green = '346524',
+  greenLight = '6daa2c',
+  gray = '4e4a4e',
+  peach = 'd2aa99',
+  red = 'd04648',
+  brown = '854c30',
+  offWhite = 'deeed6',
+	white = 'ffffff'
+
 }
 gameClock = 0
 highScore = 0
 currentScore = 0
+currentGraze = 0
 paused = false
 gameOver = false
-started = true
-aniTime = 20
+started = false
+aniTime = 15
 dt = 0
 frameLimit = 1 / 60
+goingToBossClock = 0
+goingToBossLimit = 60 * 2.5
 fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
 font = love.graphics.newFont('fonts/goldbox.ttf', 8)
 masks = {
@@ -67,7 +74,9 @@ bossHealthInit = 0
 bossHealth = 0
 bossName = ''
 bossSpell = ''
+currentStage = 4
 
+require('start')
 require('controls')
 require('background')
 require('player')
@@ -76,24 +85,47 @@ require('stage')
 require('explosions')
 require('collision')
 require('chrome')
-local setupColors
-setupColors = function()
+
+local setupColors = function()
   for color, v in pairs(colors) do
-    local _, r, g, b, a
-    _, _, r, g, b, a = colors[color]:find('(%x%x)(%x%x)(%x%x)')
-    colors[color] = {
-      tonumber(r, 16) / 255,
-      tonumber(g, 16) / 255,
-      tonumber(b, 16) / 255,
-      1
-    }
+    local _, _, r, g, b, a = colors[color]:find('(%x%x)(%x%x)(%x%x)')
+    colors[color] = {tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255, 1}
   end
 end
+
 getAngle = function(b, a)
   return math.atan2(a.y - b.y, a.x - b.x)
 end
+
+drawLabel = function(input, x, y, labelColor, alignObject)
+  input = string.upper(input)
+  local color = colors.offWhite
+	local align = 'left'
+	local limit = 512
+  if labelColor then color = colors[labelColor] end
+	if alignObject then
+		align = alignObject.type
+		limit = alignObject.width
+	end
+	love.graphics.setColor(colors.black)
+  love.graphics.printf(input, x + 1, y + 1, limit, align)
+	love.graphics.setColor(color)
+  love.graphics.printf(input, x, y, limit, align)
+	love.graphics.setColor(colors.white)
+  -- love.graphics.print({colors.black, input}, x + 1, y + 1, 0, 1, 1, oX, 0)
+	-- love.graphics.print({color, input}, x, y, 0, 1, 1, oX, 0)
+end
+
+startGame = function()
+	background.load()
+	player.load()
+	stage.load()
+	chrome.load()
+	explosions.load()
+end
+
 love.load = function()
-  love.window.setTitle('FROZEN DIRT')
+  love.window.setTitle('凍結塵芥')
   container = love.graphics.newCanvas(winWidth, winHeight)
   container:setFilter('nearest', 'nearest')
   love.window.setMode(winWidth * gameScale, winHeight * gameScale)
@@ -103,22 +135,23 @@ love.load = function()
   fontBig:setFilter('nearest', 'nearest')
   love.graphics.setFont(font)
   setupColors()
-  background.load()
-  player.load()
-  stage.load()
-	chrome.load()
-  return explosions.load()
+	if started then startGame()
+	else start.load() end
 end
+
 love.update = function(d)
   dt = d
   controls.update()
-  background.update()
-  player.update()
-  stage.update()
-  explosions.update()
-  collision.update()
-  return chrome.update()
+	if started then
+	  background.update()
+	  player.update()
+	  stage.update()
+	  explosions.update()
+	  collision.update()
+		chrome.update()
+	else start.update() end
 end
+
 love.draw = function()
   container:renderTo(love.graphics.clear)
   love.graphics.setCanvas({
@@ -127,11 +160,14 @@ love.draw = function()
   })
   currentStencil = masks.half
   love.graphics.stencil(setStencilMask, 'replace', 1)
-  background.draw()
-  player.draw()
-  stage.draw()
-  explosions.draw()
-  chrome.draw()
+	if started then
+	  background.draw()
+	  player.draw()
+	  stage.draw()
+		player.drawBullets()
+	  explosions.draw()
+	  chrome.draw()
+	else start.draw() end
   love.graphics.setCanvas()
   local windowX = 0
   love.graphics.draw(container, windowX, 0, 0, gameScale, gameScale)

@@ -44,14 +44,18 @@ currentScore = 0
 currentGraze = 0
 paused = false
 gameOver = false
-started = false
-aniTime = 15
+started = true
+aniTime = 25
 dt = 0
 frameLimit = 1 / 60
 goingToBossClock = 0
-goingToBossLimit = 60 * 2.5
-fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
-font = love.graphics.newFont('fonts/goldbox.ttf', 8)
+goingToBossLimit = 60 * 3.5
+clearedStageClock = 0
+clearedStageLimit = 60 * 3.5
+-- fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
+-- font = love.graphics.newFont('fonts/goldbox.ttf', 8)
+fontBig = love.graphics.newFont('fonts/castlevania-bloodlines-large.ttf', 14)
+font = love.graphics.newFont('fonts/castlevania-bloodlines-large.ttf', 14)
 masks = {
   half = love.graphics.newImage('img/masks/half.png'),
   quarter = love.graphics.newImage('img/masks/quarter.png')
@@ -79,6 +83,7 @@ currentStage = 4
 require('start')
 require('controls')
 require('background')
+require('drops')
 require('player')
 require('enemies')
 require('stage')
@@ -118,17 +123,18 @@ end
 
 startGame = function()
 	background.load()
+	drops.load()
 	player.load()
 	stage.load()
-	chrome.load()
 	explosions.load()
+	loadChrome()
 end
 
 love.load = function()
   love.window.setTitle('凍結塵芥')
   container = love.graphics.newCanvas(winWidth, winHeight)
   container:setFilter('nearest', 'nearest')
-  love.window.setMode(winWidth * gameScale, winHeight * gameScale)
+  love.window.setMode(winWidth * gameScale, winHeight * gameScale, {vsync = false})
   love.graphics.setLineStyle('rough')
   love.graphics.setLineWidth(1)
   font:setFilter('nearest', 'nearest')
@@ -144,11 +150,12 @@ love.update = function(d)
   controls.update()
 	if started then
 	  background.update()
+		drops.update()
 	  player.update()
 	  stage.update()
 	  explosions.update()
 	  collision.update()
-		chrome.update()
+		updateChrome()
 	else start.update() end
 end
 
@@ -162,11 +169,12 @@ love.draw = function()
   love.graphics.stencil(setStencilMask, 'replace', 1)
 	if started then
 	  background.draw()
+		drops.draw()
 	  player.draw()
 	  stage.draw()
 		player.drawBullets()
 	  explosions.draw()
-	  chrome.draw()
+	  drawChrome()
 	else start.draw() end
   love.graphics.setCanvas()
   local windowX = 0

@@ -13,7 +13,17 @@ chrome = {
   fps = 0
 }
 
-chrome.load = function()
+local fontOffset = grid + 4
+
+function processScore(input)
+	local score = tostring(input);
+	for i = 1, 8 - #score do
+		score = '0' .. score
+	end
+	return score
+end
+
+function loadChrome()
   for type, img in pairs(chrome.images.portraits) do
     chrome.images.portraits[type]:setFilter('nearest', 'nearest')
   end
@@ -23,10 +33,20 @@ local function updateFps()
   if gameClock % 30 == 0 then
     local currentTime = os.time()
     local fps = 60 - (currentTime - chrome.lastTime)
-    chrome.fps = '00(00)'
-    if fps and love.timer.getFPS() > 0 then chrome.fps = tostring(fps) .. '(' .. tostring(love.timer.getFPS()) .. ')' end
+    chrome.fps = '00 00 '
+    if fps and love.timer.getFPS() > 0 then chrome.fps = tostring(fps) .. ' ' .. tostring(love.timer.getFPS()) .. ' ' end
     chrome.lastTime = currentTime
   end
+end
+
+local function updateStages()
+	if goingToBossClock > 0 then goingToBossClock = goingToBossClock - 1 end
+	if clearedStageClock > 0 then clearedStageClock = clearedStageClock - 1 end
+end
+
+function updateChrome()
+  updateFps()
+	updateStages()
 end
 
 local function drawBorder()
@@ -37,15 +57,14 @@ end
 local function drawScore()
 	love.graphics.setFont(fontBig)
   local x = gameX - grid
-  local y = 13
-	local yOffset = grid + 2
+  local y = grid
   local scoreStr = 'Hi Score'
-  local scoreNum = '00000000'
+  local scoreNum = processScore(0)
   drawLabel(scoreStr, x - #scoreStr * 8, y)
-  drawLabel(scoreNum, x - #scoreNum * 8, y + yOffset)
+  drawLabel(scoreNum, x - #scoreNum * 8, y + fontOffset)
   x = gameX + gameWidth + grid
   drawLabel('Score', x, y)
-  drawLabel('00000000', x, y + yOffset)
+  drawLabel(processScore(currentScore), x, y + fontOffset)
   love.graphics.setFont(font)
 end
 
@@ -82,7 +101,7 @@ local function drawDebug()
   -- end
   -- drawDebug()
   -- love.graphics.setFont(fontBig)
-  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid - 8, false, {type = 'right', width = gameX - 12})
+  drawLabel(chrome.fps .. 'FPS', gameX + gameWidth, winHeight - grid * 2, false, {type = 'right', width = gameX - 12})
 end
 
 local function drawBoss()
@@ -120,32 +139,6 @@ local function drawPortraits()
   love.graphics.draw(chrome.images.portraits.irate, gameX + grid * 22.5, gameY + grid * 5, 0, irateScale, irateScale)
 end
 
-local function drawClear()
-	local x = gameX + gameWidth / 2
-	local y = gameY + grid * 8.5
-	love.graphics.setFont(fontBig)
-	local stageClear = 'Stage #3 Cleared'
-	drawLabel(stageClear, x - #stageClear * 8 / 2, y)
-	love.graphics.setFont(font)
-	y = y + grid * 2.25
-	local noMiss = 'No Miss 5000'
-	drawLabel(noMiss, x - #noMiss * 8 / 2, y)
-	y = y + 12
-	local noBomb = 'No Bomb 2500'
-	drawLabel(noBomb, x - #noBomb * 8 / 2, y)
-	y = y + 12
-	local extra = 'Strong! 1500'
-	drawLabel(extra, x - #extra * 8 / 2, y)
-	love.graphics.setFont(fontBig)
-	y = y + grid * 1.5 + 2
-	local total = 'Total Bonus 9000'
-	drawLabel(total, x - #total * 8 / 2, y)
-	y = y + grid * 3
-	local next = 'Next Baka Get!'
-	drawLabel(next, x - #next * 8 / 2, y)
-	love.graphics.setFont(font)
-end
-
 local function drawStages()
 
 	local function current()
@@ -165,32 +158,46 @@ local function drawStages()
 	end
 
 	local function goingToBoss()
-		love.graphics.setFont(fontBig)
 		local str = 'A Baka Approaches'
 		local x = gameX + gameWidth / 2 - #str * 8 / 2
 		local y = gameHeight / 2 - 8
 		drawLabel(str, x, y)
 		love.graphics.setFont(font)
-		goingToBossClock = goingToBossClock - 1
 	end
 
-	current()
+	local function clearedStage()
+		local x = gameX + gameWidth / 2
+		local y = gameY + grid * 8
+		local stageClear = 'Stage 3 Cleared'
+		drawLabel(stageClear, x - #stageClear * 8 / 2, y)
+		y = y + grid * 3
+		local noMiss = 'No Miss  5000'
+		drawLabel(noMiss, x - #noMiss * 8 / 2, y)
+		y = y + fontOffset
+		local noBomb = 'No Bomb  2500'
+		drawLabel(noBomb, x - #noBomb * 8 / 2, y)
+		y = y + grid * 2
+		local total = '  Total  9000'
+		drawLabel(total, x - #total * 8 / 2, y)
+		y = y + grid * 3
+		local next = 'Wait for next stage'
+		drawLabel(next, x - #next * 8 / 2, y)
+	end
+
+	-- current()
 	if goingToBossClock > 0 then goingToBoss() end
+	if clearedStageClock > 0 then clearedStage() end
+	-- clearedStage()
 
 end
 
-chrome.update = function()
-  updateFps()
-end
-
-chrome.draw = function()
+function drawChrome()
   drawBorder()
 	-- drawPortraits()
   drawScore()
-  drawDebug()
+  -- drawDebug()
 	drawStages()
   -- drawLives()
   -- drawBombs()
   if bossHealth > 0 then drawBoss() end
-	-- drawClear()
 end

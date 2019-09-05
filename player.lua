@@ -1,5 +1,5 @@
 player = {
-	speed = 3.5,
+	speed = 3,
 	startingX = gameWidth / 2,
 	startingY = gameHeight - grid * 4,
 	images = {
@@ -72,7 +72,7 @@ end
 local function updateMove()
 	local speed = player.speed
 	if controls.focus then
-		speed = 2
+		speed = speed / 2
 		local mod = .01
 		player.borderRotationA = player.borderRotationA + mod
 		player.borderRotationB = player.borderRotationB - mod / 2
@@ -133,11 +133,13 @@ local function updateBullet(index)
 	else
 		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
 			if enemy.health <= 0 then
+				drops.spawnPoint(enemy)
 				explosions.spawn(enemy, false, true, true)
 				enemy.x = -gameWidth
 				enemy.y = -gameHeight
 			elseif enemy and (enemy.health) then
-				enemy.health = enemy.health - 1
+				if enemy.isBoss and enemy.clock >= 0 then enemy.health = enemy.health - 1
+				elseif not enemy.isBoss then enemy.health = enemy.health - 1 end
 				explosions.spawn(bullet, false, false, true)
 			end
 			bullet.x = -gameWidth
@@ -151,9 +153,9 @@ local function updateShoot()
 		player.canShoot = false
 		player.shotClock = 0
 	end
-	local interval = 5
+	local interval = 10
 	local limit = interval * 2
-	local max = limit * 3
+	local max = limit * 2
 	if not player.canShoot then
 		if player.shotClock % interval == 0 and player.shotClock <= limit then
 			local diff = 1
@@ -231,7 +233,7 @@ local function drawWings()
 	local interval = aniTime * 4
 	if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or (player.clock % interval >= aniTime * 3) then img = player.images.wing2
 	elseif player.clock % interval >= aniTime * 2 and player.clock % interval < aniTime * 3 then img = player.images.wing3 end
-	currentStencil = masks.half
+	currentStencil = masks.quarter
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
 	love.graphics.draw(img, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.wing1:getWidth() / 2, player.images.wing1:getHeight() / 2)

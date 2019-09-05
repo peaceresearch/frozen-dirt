@@ -1,7 +1,7 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'small', 'arrow', 'bullet', 'big', 'big2', 'bolt'},
+	bulletTypes = {'small', 'arrow', 'bullet', 'big', 'big2', 'bolt', 'bolt-light', 'big-light'},
 	-- bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'redbolt', 'redbullet',
 	-- 	'gray', 'grayarrow', 'graypill', 'graybig', 'graypuff', 'graybig2',
 	-- 	'blue', 'bluebig', 'bluearrow', 'bluepill', 'bluebullet', 'bluepuff',
@@ -19,7 +19,7 @@ stage = {
 
 currentWave = nil
 
-bossOffset = grid * 7.75
+bossOffset = grid * 8
 
 local glowScale = 2
 
@@ -57,7 +57,7 @@ function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
 	enemy.images = stage.enemyImages[type]
 	enemy.colliderType = 'enemy'
 	enemy.clock = 0
-	enemy.health = 0
+	enemy.health = 1
 	enemy.x = x
 	enemy.y = y
 	enemy.lastX = x
@@ -260,7 +260,7 @@ local function drawBullet(index)
 end
 
 local function updateWaves()
-	if not currentWave then currentWave = enemies.stageOneBossOne end
+	if not currentWave then currentWave = enemies.stageTwoWaveOne end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
 end
@@ -268,20 +268,22 @@ end
 function spawnBoss(type, attacks, moves, suicide)
 	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
 		enemy.angle = math.pi / 2
-		enemy.speed = 3.2
+		enemy.speed = 2.5
 		enemy.currentAttack = 1
-		enemy.health = 325
+		enemy.health = 250
 		enemy.started = false
 		bossHealthInit = enemy.health
 		enemy.isBoss = true
-		enemy.suicide = suicide
+		function enemy.suicide(enemy)
+			suicide(enemy)
+		end
 	end, function(enemy)
 		if enemy.started then
 			local current = 1
 			for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
 			if enemy.currentAttack ~= current then
 				stage.killBullets = true
-				enemy.clock = -60
+				enemy.clock = -90
 				enemy.lastHealth = enemy.health
 				enemy.currentAttack = current
 			end
@@ -292,7 +294,7 @@ function spawnBoss(type, attacks, moves, suicide)
 			bossHealth = enemy.health
 		else
 			if enemy.lastHealth then enemy.health = enemy.lastHealth end
-			enemy.speed = enemy.speed - .05
+			enemy.speed = enemy.speed - .03
 			if enemy.speed <= 0 then
 				enemy.speed = 0
 				enemy.clock = -1
@@ -306,6 +308,16 @@ function spawnBoss(type, attacks, moves, suicide)
 			}
 		end
 	end)
+end
+
+function stage.prepForBoss(wave)
+	if currentWave.clock > 0 and #stage.enemies == 0 then
+		if goingToBossClock == 0 then goingToBossClock = goingToBossLimit
+		elseif goingToBossClock == 1 then
+			currentWave = enemies[wave]
+			currentWave.clock = -1
+		end
+	end
 end
 
 function stage.update()

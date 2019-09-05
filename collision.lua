@@ -8,6 +8,10 @@ local function killPlayer()
 	stage.killBulletTimer = 60 * 2
 end
 
+local function collectDrop(drop)
+	drop.collected = true
+end
+
 collision.check = function(collider, type, func)
   for shape, delta in pairs(collider) do
     if shape.colliderType == type then func(shape) end
@@ -19,12 +23,13 @@ collision.update = function()
 		collision.check(hc.collisions(player.collider), 'bullet', function(bullet)
 			-- if bullet.visible then killPlayer() end
 		end)
+		-- collision.check(hc.collisions(player.collider), 'enemy', killPlayer)
 		collision.check(hc.collisions(player.grazeCollider), 'bullet', function(bullet)
 			if bullet.visible and not bullet.grazed then
 				bullet.grazed = true
 				currentGraze = currentGraze + 1
 			end
 		end)
-		collision.check(hc.collisions(player.collider), 'enemy', killPlayer)
+		collision.check(hc.collisions(player.grazeCollider), 'drop', collectDrop)
 	end
 end

@@ -31,10 +31,10 @@ background.load = function()
 	stageColor = 'purple'
 
 	-- spring path
-	stageColor = 'gray'
+	-- stageColor = 'gray'
 
 	-- misty lake
-	stageColor = 'blue'
+	-- stageColor = 'blue'
 
 end
 

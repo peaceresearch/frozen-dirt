@@ -1,17 +1,14 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'small', 'arrow', 'bullet', 'big', 'big2', 'bolt', 'bolt-light', 'big-light'},
-	-- bulletTypes = {'red', 'redbig', 'redarrow', 'redpill', 'redbolt', 'redbullet',
-	-- 	'gray', 'grayarrow', 'graypill', 'graybig', 'graypuff', 'graybig2',
-	-- 	'blue', 'bluebig', 'bluearrow', 'bluepill', 'bluebullet', 'bluepuff',
-	-- 	'orange', 'orangebig', 'orangepill', 'orangedouble', 'orangebullet', 'orangetriple', 'orangearrow', 'orangebolt'},
-	enemyTypes = {'cirno', 'fairyred'},
+	bulletTypes = {'arrow', 'big', 'bigb', 'small',	'bullet', 'bolt'},
+	enemyTypes = {'cirno', 'fairyred', 'fairygreen', 'fairyyellow'},
 	bulletImages = {},
 	enemyImages = {},
 	killBullets = false,
 	killBulletTimer = 0,
 	border = love.graphics.newImage('img/enemies/border.png'),
+	glow = love.graphics.newImage('img/enemies/glow.png'),
 	borderRotation = 0,
 	borderScale = 1,
 	borderScaleFlipped = false
@@ -19,12 +16,15 @@ stage = {
 
 currentWave = nil
 
-bossOffset = grid * 8
-
-local glowScale = 2
+bossOffset = grid * 5
 
 function stage.load()
-	for i = 1, #stage.bulletTypes do stage.bulletImages[stage.bulletTypes[i]] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '.png') end
+	for i = 1, #stage.bulletTypes do
+		stage.bulletImages[stage.bulletTypes[i] .. '1'] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '1.png')
+		stage.bulletImages[stage.bulletTypes[i] .. '2'] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '2.png')
+		stage.bulletImages[stage.bulletTypes[i] .. '3'] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '3.png')
+		stage.bulletImages[stage.bulletTypes[i] .. '4'] = love.graphics.newImage('img/bullets/' .. stage.bulletTypes[i] .. '4.png')
+	end
 	for i = 1, #stage.enemyTypes do
 		stage.enemyImages[stage.enemyTypes[i]] = {
 			idle1 = love.graphics.newImage('img/enemies/' .. stage.enemyTypes[i] .. '/idle1.png'),
@@ -47,6 +47,7 @@ function stage.load()
 		for jType, jImg in pairs(stage.enemyImages[type]) do stage.enemyImages[type][jType]:setFilter('nearest', 'nearest') end
 	end
 	stage.border:setFilter('nearest', 'nearest')
+	stage.glow:setFilter('nearest', 'nearest')
 end
 
 function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
@@ -147,43 +148,33 @@ end
 
 local function drawEnemy(index)
 	local enemy = stage.enemies[index]
-	local function drawBorder()
-		currentStencil = masks.quarter
-		local tempBorderScale = 1.5
-		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.blue)
-		love.graphics.draw(stage.border, enemy.x + gameX, enemy.y + gameY, stage.borderRotation, stage.borderScale * tempBorderScale * 1.1, stage.borderScale * tempBorderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
-		love.graphics.setColor(colors.white)
-	end
-	local function drawGlow()
-		local radius = 24
-		if enemy.isBoss then radius = 38 end
+
+	if enemy.isBoss then
 		currentStencil = masks.quarter
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setColor(colors.blue)
-		love.graphics.circle('fill', enemy.x + gameX, enemy.y + gameY, radius)
+		love.graphics.setStencilTest('greater', 0)
+		local tempBorderScale = 1.25
+		love.graphics.setColor(colors.blueDark)
+		love.graphics.draw(stage.border, enemy.x, enemy.y, stage.borderRotation, stage.borderScale * tempBorderScale * 1.1, stage.borderScale * tempBorderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
+		love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, 1, 1, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
 		currentStencil = masks.half
 		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.circle('fill', enemy.x + gameX, enemy.y + gameY, radius - 10)
+		love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, .75, .75, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
 		love.graphics.setColor(colors.white)
+		love.graphics.setStencilTest()
 	end
-	love.graphics.setStencilTest('greater', 0)
-	if enemy.isBoss then
-		drawGlow()
-		drawBorder()
-	end
-	love.graphics.setStencilTest()
+
 	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, 1, 1, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
 end
 
-local animateBulletInterval = 8
+local animateBulletInterval = 5
 
 function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	x = math.floor(x)
 	y = math.floor(y)
-	width = stage.bulletImages[type]:getWidth() / 2
+	width = stage.bulletImages[type .. '1']:getWidth() / 2
 	local bullet = hc.circle(x, y, width)
-	bullet.image = stage.bulletImages[type]
+	bullet.bulletType = type
 	bullet.rotation = 0
 	bullet.clock = 0
 	bullet.grazed = false
@@ -191,14 +182,7 @@ function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	bullet.x = x
 	bullet.y = y
 	bullet.visible = true
-	bullet.color = 'red'
-	if string.find(string.lower(type), 'blue') then bullet.color = 'blue'
-	elseif string.find(string.lower(type), 'gray') then bullet.color = 'gray' end
 	if initFunc then initFunc(bullet) end
-	-- if bullet.animatedByFlip then
-	-- 		bullet.scaleX = 1
-	-- 		if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
-	-- end
 	if updateFunc then bullet.updateFunc = updateFunc end
 	table.insert(stage.bullets, bullet)
 end
@@ -212,14 +196,12 @@ local function updateBullet(index)
 			bullet.y = bullet.y + bullet.velocity.y
 			bullet:moveTo(bullet.x, bullet.y)
 		end
-		if bullet.clock % animateBulletInterval == 0 then
-			if bullet.animatedByRotation then
-				bullet.rotation = bullet.rotation + math.pi * math.random()
-			elseif bullet.animatedByFlip then
-				bullet.scaleX = 1
-				if math.floor(math.random() * 2) == 1 then bullet.scaleX = -1 end
-			end
-		end
+		local animateTime = animateBulletInterval * 4
+		local img = bullet.bulletType .. '1'
+		if bullet.clock % animateTime >= animateTime / 4 and bullet.clock % animateTime < animateTime / 2 then img = bullet.bulletType .. '2'
+		elseif bullet.clock % animateTime >= animateTime / 2 and bullet.clock % animateTime < animateTime / 4 * 3 then img = bullet.bulletType .. '3'
+		elseif bullet.clock % animateTime >= animateTime / 4 then img = bullet.bulletType .. '4' end
+		bullet.image = stage.bulletImages[img]
 		bullet.clock = bullet.clock + 1
 		local bound = grid * 10
 		if bullet.y < gameY - bound or
@@ -246,9 +228,7 @@ local function drawBullet(index)
 			end
 			love.graphics.setStencilTest('greater', 0)
 		end
-		local scaleX = 1
-		if bullet.scaleX then scaleX = bullet.scaleX end
-		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, scaleX, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
+		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
 		if bullet.transparent or bullet.superTransparent then
 			if bullet.superTransparent then
 				currentStencil = masks.half
@@ -260,20 +240,21 @@ local function drawBullet(index)
 end
 
 local function updateWaves()
-	if not currentWave then currentWave = enemies.stageTwoWaveOne end
+	if not currentWave then currentWave = enemies.stageFiveBoss end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
 end
 
-function spawnBoss(type, attacks, moves, suicide)
+function spawnBoss(type, attacks, moves, suicide, subUpdateFunc)
 	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
 		enemy.angle = math.pi / 2
-		enemy.speed = 2.5
+		enemy.speed = 1.85
 		enemy.currentAttack = 1
-		enemy.health = 250
+		enemy.health = 300
 		enemy.started = false
 		bossHealthInit = enemy.health
 		enemy.isBoss = true
+		if subUpdateFunc then enemy.subUpdateFunc = subUpdateFunc end
 		function enemy.suicide(enemy)
 			suicide(enemy)
 		end
@@ -289,12 +270,12 @@ function spawnBoss(type, attacks, moves, suicide)
 			end
 			if enemy.clock >= 0 then
 				attacks[enemy.currentAttack](enemy)
-				moves[enemy.currentAttack](enemy)
 			end
 			bossHealth = enemy.health
+			if enemy.subUpdateFunc then enemy.subUpdateFunc(enemy) end
 		else
 			if enemy.lastHealth then enemy.health = enemy.lastHealth end
-			enemy.speed = enemy.speed - .03
+			enemy.speed = enemy.speed - .02
 			if enemy.speed <= 0 then
 				enemy.speed = 0
 				enemy.clock = -1

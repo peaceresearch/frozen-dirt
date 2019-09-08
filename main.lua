@@ -1,40 +1,50 @@
 math.tau = math.pi * 2
 hc = require('lib/hc')
-winWidth = 640
-winHeight = 480
-gameScale = 2
+-- winWidth = 640
+-- winHeight = 480
+winWidth = 240
+winHeight = 320
+gameScale = 3
 grid = 16
-gameWidth = grid * 24
-gameHeight = grid * 28
-gameX = winWidth / 2 - gameWidth / 2
-gameY = grid
+-- gameWidth = grid * 24
+-- gameHeight = grid * 28
+gameWidth = winWidth
+gameHeight = winHeight
+-- gameX = winWidth / 2 - gameWidth / 2
+-- gameY = grid
+gameX = 0
+gameY = 0
 colors = {
+
+	-- 32 colors
+	purpleDark = '222034',
+	purple = '45283c',
   purpleLight = '76428a',
   pink = 'd77bba',
+	red = 'ac3232',
   redLight = 'd95763',
   blueMid = '639bff',
 	blueDark = '306082',
 	blueDarkest = '3f3f74',
   blue = '5b6ee1',
+	blueLightest = '5fcde4',
   orange = 'd27d2c',
+	grayDark = '595652',
+  gray = '696a6a',
+	grayLight = '847e87',
 	grayLightest = '9badb7',
-  grayDark = '4e4a4e',
   yellow = 'dad45e',
+	greenDarkest = '323c39',
 
-	-- here be new colors
-  black = '140c1c',
-  purple = '442434',
-  grayLight = '8595a1',
-	blue = '30346d',
-	blueLight = '597dce',
-  blueLightest = '6dc2ca',
-  green = '346524',
-  greenLight = '6daa2c',
-  gray = '4e4a4e',
-  peach = 'd2aa99',
-  red = 'd04648',
-  brown = '854c30',
-  offWhite = 'deeed6',
+
+
+	-- here be uhhh new colors
+	black = '140c1c',
+	purple = '442434',
+	blueDark = '30346d',
+	blue = '597dce',
+	blueLight = '6dc2ca',
+	offWhite = 'deeed6',
 	white = 'ffffff'
 
 }
@@ -51,11 +61,8 @@ frameLimit = 1 / 60
 goingToBossClock = 0
 goingToBossLimit = 60 * 3.5
 clearedStageClock = 0
-clearedStageLimit = 60 * 3.5
--- fontBig = love.graphics.newFont('fonts/goldbox-big.ttf', 13)
--- font = love.graphics.newFont('fonts/goldbox.ttf', 8)
-fontBig = love.graphics.newFont('fonts/castlevania-bloodlines-large.ttf', 14)
-font = love.graphics.newFont('fonts/castlevania-bloodlines-large.ttf', 14)
+clearedStageLimit = 60 * 5
+font = love.graphics.newFont('fonts/Ibara.ttf', 7)
 masks = {
   half = love.graphics.newImage('img/masks/half.png'),
   quarter = love.graphics.newImage('img/masks/quarter.png')
@@ -78,7 +85,7 @@ bossHealthInit = 0
 bossHealth = 0
 bossName = ''
 bossSpell = ''
-currentStage = 4
+currentStage = 1
 
 require('start')
 require('controls')
@@ -87,6 +94,7 @@ require('drops')
 require('player')
 require('enemies')
 require('stage')
+require('graze')
 require('explosions')
 require('collision')
 require('chrome')
@@ -96,6 +104,8 @@ local setupColors = function()
     local _, _, r, g, b, a = colors[color]:find('(%x%x)(%x%x)(%x%x)')
     colors[color] = {tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255, 1}
   end
+	colors.transparent = {1, 1, 1, .5}
+	colors.transparentBlack = {0, 0, 0, .67}
 end
 
 getAngle = function(b, a)
@@ -126,6 +136,7 @@ startGame = function()
 	drops.load()
 	player.load()
 	stage.load()
+	graze.load()
 	explosions.load()
 	loadChrome()
 end
@@ -138,7 +149,6 @@ love.load = function()
   love.graphics.setLineStyle('rough')
   love.graphics.setLineWidth(1)
   font:setFilter('nearest', 'nearest')
-  fontBig:setFilter('nearest', 'nearest')
   love.graphics.setFont(font)
   setupColors()
 	if started then startGame()
@@ -153,6 +163,7 @@ love.update = function(d)
 		drops.update()
 	  player.update()
 	  stage.update()
+		graze.update()
 	  explosions.update()
 	  collision.update()
 		updateChrome()
@@ -173,6 +184,7 @@ love.draw = function()
 	  player.draw()
 	  stage.draw()
 		player.drawBullets()
+		graze.draw()
 	  explosions.draw()
 	  drawChrome()
 	else start.draw() end

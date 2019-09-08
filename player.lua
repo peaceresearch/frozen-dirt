@@ -1,5 +1,5 @@
 player = {
-	speed = 3,
+	speed = 2,
 	startingX = gameWidth / 2,
 	startingY = gameHeight - grid * 4,
 	images = {
@@ -183,20 +183,11 @@ local function drawBorder()
 	currentStencil = masks.quarter
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
-	love.graphics.setColor(colors.offWhite)
+	love.graphics.setColor(colors.grayLightest)
 	love.graphics.draw(player.images.border, player.x + gameX, player.y + gameY, player.borderRotationA, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
 	love.graphics.draw(player.images.border, player.x + gameX, player.y + gameY, player.borderRotationB, 1, 1, player.images.border:getWidth() / 2, player.images.border:getHeight() / 2)
 	love.graphics.setColor(colors.white)
 	love.graphics.setStencilTest()
-	currentStencil = masks.half
-	love.graphics.stencil(setStencilMask, 'replace', 1)
-end
-
-local function drawSides()
-	-- if player.power > 1 then
-		love.graphics.draw(player.images.side, player.x + gameX - player.sideOffset, player.y + player.sideY, player.sideRotation, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
-		love.graphics.draw(player.images.side, player.x + gameX + player.sideOffset - 1, player.y + player.sideY, -player.sideRotation, 1, 1, player.images.side:getWidth() / 2, player.images.side:getHeight() / 2)
-	-- end
 end
 
 function player.update()
@@ -228,22 +219,26 @@ function player.update()
 	end
 end
 
+local playerScale = .8
+
 local function drawWings()
 	local img = player.images.wing1
 	local interval = aniTime * 4
 	if (player.clock % interval >= aniTime and player.clock % interval < aniTime * 2) or (player.clock % interval >= aniTime * 3) then img = player.images.wing2
 	elseif player.clock % interval >= aniTime * 2 and player.clock % interval < aniTime * 3 then img = player.images.wing3 end
-	currentStencil = masks.quarter
+
+	currentStencil = masks.half
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
-	love.graphics.draw(img, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.wing1:getWidth() / 2, player.images.wing1:getHeight() / 2)
+	love.graphics.draw(img, player.x + gameX, player.y + gameY, 0, playerScale, playerScale, player.images.wing1:getWidth() / 2, player.images.wing1:getHeight() / 2)
 	love.graphics.setStencilTest()
+
 end
 
 function player.draw()
 	local function drawPlayer()
 		if controls.focus then drawBorder() end
-		love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY - 1, 0, 1, 1, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
+		love.graphics.draw(player.currentImage(), player.x + gameX, player.y + gameY - 1, 0, playerScale, playerScale, player.currentImage():getWidth() / 2, player.currentImage():getHeight() / 2)
 		drawWings()
 		if controls.focus then
 			currentStencil = masks.half
@@ -253,7 +248,6 @@ function player.draw()
 			love.graphics.setStencilTest()
 			love.graphics.draw(player.images.hitbox, player.x + gameX, player.y + gameY, 0, 1, 1, player.images.hitbox:getWidth() / 2, player.images.hitbox:getHeight() / 2)
 		end
-		-- drawSides()
 	end
 	if player.invulnerableClock > 0 then
 		if player.invulnerableClock < 60 * 3 then
@@ -264,7 +258,7 @@ function player.draw()
 end
 
 function player.drawBullets()
-	currentStencil = masks.quarter
+	currentStencil = masks.half
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
 	for i, v in ipairs(player.bullets) do drawBullet(i) end

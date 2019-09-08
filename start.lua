@@ -7,7 +7,7 @@ start = {
 	}
 }
 
-local options = {'Start Game', 'High Scores', 'Display Option', 'Exit'}
+local options = {'Classic Mode', 'Drunk Label', 'Time Attack', 'High Scores', 'Display Options', 'Quit To Desktop'}
 local activeOption = 1
 
 local pressingDown = false
@@ -34,7 +34,7 @@ local function updateMenuSelect()
 	if activeOption == 1 and controls.shoot and not started then
 		startGame()
 		started = true
-	elseif activeOption == 4 and controls.shoot then
+	elseif activeOption == 6 and controls.shoot then
 		love.event.quit()
 	end
 end
@@ -45,39 +45,31 @@ start.update = function()
 end
 
 local function drawOptions()
-	love.graphics.setFont(fontBig)
-	local y = grid * 16
+	local y = gameHeight / 2 - 8
 	for i = 1, #options do
 		local x = winWidth / 2 - #options[i] * 8 / 2
 	  drawLabel(options[i], x, y)
-		if i == activeOption then
-			local activeX = x - 18
-			love.graphics.setColor(colors.black)
-			love.graphics.draw(start.images.option, activeX, y + 4)
-			love.graphics.setColor(colors.red)
-			love.graphics.draw(start.images.option, activeX - 1, y + 3)
-			love.graphics.setColor(colors.white)
-		end
-		y = y + grid + 8
+		if i == activeOption then drawLabel(options[i], x, y, 'blueLight')
+		else drawLabel(options[i], x, y) end
+		y = y + 12
 	end
-	love.graphics.setFont(font)
 end
 
 
 local function drawCredits()
-	local x = grid
-	local y = winHeight - 8 - 12
-	local offset = 14
-	drawLabel('t.b: programming, design, art', x, y - offset * 2)
-	drawLabel('a.m: sound design, bgm', x, y - offset)
+	local x = 8
+	local y = gameHeight - 6 - 8
+	local offset = 10
+	drawLabel('t.b: programming and art', x, y - offset * 2)
+	drawLabel('a.m: sfx and bgm', x, y - offset)
 	drawLabel('characters by zun', x, y)
-	drawLabel('rev 09.03.19', 0, y, false, {type = 'right', width = winWidth - x})
+	drawLabel('v1.0', 0, y, false, {type = 'right', width = winWidth - x})
 end
 
 start.draw = function()
 	love.graphics.draw(start.images.bg, 0, 0)
-	love.graphics.draw(start.images.logo, math.floor(winWidth / 2 - start.images.logo:getWidth() / 2), grid * 4)
-	love.graphics.draw(start.images.subtitle, math.floor(winWidth / 2 - start.images.subtitle:getWidth() / 2), grid * 11)
+	love.graphics.draw(start.images.logo, math.floor(gameWidth / 2 - start.images.logo:getWidth() / 2), gameHeight / 3 - start.images.logo:getHeight() / 2)
+	-- love.graphics.draw(start.images.subtitle, math.floor(winWidth / 2 - start.images.subtitle:getWidth() / 2), grid * 11)
 	drawOptions()
 	drawCredits()
 end

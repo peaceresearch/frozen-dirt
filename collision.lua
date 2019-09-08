@@ -28,6 +28,8 @@ collision.update = function()
 			if bullet.visible and not bullet.grazed then
 				bullet.grazed = true
 				currentGraze = currentGraze + 1
+				graze.spawn({x = player.x, y = player.y}, getAngle({x = bullet.x, y = bullet.y}, player))
+				currentScore = currentScore + 1
 			end
 		end)
 		collision.check(hc.collisions(player.grazeCollider), 'drop', collectDrop)

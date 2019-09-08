@@ -39,7 +39,7 @@ end
 explosions.update = function()
   local prune
   prune = function()
-    if #explosions.explosions > 100 then
+    if #explosions.explosions > 120 then
       table.remove(explosions.explosions, 1)
       return prune()
     end
@@ -48,7 +48,7 @@ explosions.update = function()
   for i = 1, #explosions.explosions do
     local explosion = explosions.explosions[i]
     if explosion then
-      local interval = 4
+      local interval = 5
       explosion.clock = explosion.clock + 1
       if explosion.clock == interval then
         explosion.currentTexture = 2

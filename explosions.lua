@@ -14,7 +14,7 @@ explosions.load = function()
   end
 end
 
-explosions.spawn = function(target, blue, big, gray, transparent)
+explosions.spawn = function(target, blue, big, gray, transparent, realBig)
   local explosion = {
     currentTexture = 1,
     x = target.x,
@@ -32,6 +32,10 @@ explosions.spawn = function(target, blue, big, gray, transparent)
   if big then
     explosion.xRandom = explosion.xRandom * 2
     explosion.yRandom = explosion.yRandom * 2
+  end
+	if realBig then
+    explosion.xRandom = explosion.xRandom * 1.5
+    explosion.yRandom = explosion.yRandom * 1.5
   end
   return table.insert(explosions.explosions, explosion)
 end

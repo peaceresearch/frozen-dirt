@@ -1,7 +1,8 @@
 stage = {
 	enemies = {},
 	bullets = {},
-	bulletTypes = {'arrow', 'big', 'bigb', 'small',	'bullet', 'bolt'},
+	bulletTypes = {'arrow', 'big', 'small',	'bullet', 'bolt',
+		'arrowlight', 'biglight', 'smalllight', 'bulletlight', 'boltlight'},
 	enemyTypes = {'cirno', 'fairyred', 'fairygreen', 'fairyyellow'},
 	bulletImages = {},
 	enemyImages = {},
@@ -17,6 +18,9 @@ stage = {
 currentWave = nil
 
 bossOffset = grid * 5
+
+pregameLimit = 220
+pregameClock = pregameLimit
 
 function stage.load()
 	for i = 1, #stage.bulletTypes do
@@ -68,6 +72,62 @@ function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
 	if initFunc then initFunc(enemy) end
 	if updateFunc then enemy.updateFunc = updateFunc end
 	table.insert(stage.enemies, enemy)
+end
+
+function spawnBoss(type, attacks, moves, suicide, subUpdateFunc)
+	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
+		enemy.angle = math.pi / 2
+		enemy.speed = 1.85
+		enemy.currentAttack = 1
+		enemy.health = 300
+		enemy.started = false
+		bossHealthInit = enemy.health
+		enemy.isBoss = true
+		if subUpdateFunc then enemy.subUpdateFunc = subUpdateFunc end
+		function enemy.suicide(enemy)
+			suicide(enemy)
+		end
+	end, function(enemy)
+		if enemy.started then
+			local current = 1
+			for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
+			if enemy.currentAttack ~= current then
+				stage.killBullets = true
+				enemy.clock = -90
+				enemy.lastHealth = enemy.health
+				enemy.currentAttack = current
+			end
+			if enemy.clock >= 0 then
+				attacks[enemy.currentAttack](enemy)
+			end
+			bossHealth = enemy.health
+			if enemy.subUpdateFunc then enemy.subUpdateFunc(enemy) end
+		else
+			if enemy.lastHealth then enemy.health = enemy.lastHealth end
+			enemy.speed = enemy.speed - .02
+			if enemy.speed <= 0 then
+				enemy.speed = 0
+				enemy.clock = -1
+				enemy.started = true
+				enemy.angle = 0
+				enemy.y = math.floor(enemy.y)
+			end
+			enemy.velocity = {
+				x = math.cos(enemy.angle) * enemy.speed,
+				y = math.sin(enemy.angle) * enemy.speed
+			}
+		end
+	end)
+end
+
+function prepForBoss(wave)
+	if currentWave.clock > 0 and #stage.enemies == 0 then
+		if goingToBossClock == 0 then goingToBossClock = goingToBossLimit
+		elseif goingToBossClock == 1 then
+			currentWave = enemies[wave]
+			currentWave.clock = -1
+		end
+	end
 end
 
 function moveEnemySides(enemy)
@@ -146,34 +206,12 @@ local function updateEnemy(index)
 	end
 end
 
-local function drawEnemy(index)
-	local enemy = stage.enemies[index]
-
-	if enemy.isBoss then
-		currentStencil = masks.quarter
-		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.setStencilTest('greater', 0)
-		local tempBorderScale = 1.25
-		love.graphics.setColor(colors.blueDark)
-		love.graphics.draw(stage.border, enemy.x, enemy.y, stage.borderRotation, stage.borderScale * tempBorderScale * 1.1, stage.borderScale * tempBorderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
-		love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, 1, 1, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
-		currentStencil = masks.half
-		love.graphics.stencil(setStencilMask, 'replace', 1)
-		love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, .75, .75, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
-		love.graphics.setColor(colors.white)
-		love.graphics.setStencilTest()
-	end
-
-	love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, 1, 1, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
-end
-
 local animateBulletInterval = 5
 
 function stage.spawnBullet(type, x, y, initFunc, updateFunc)
 	x = math.floor(x)
 	y = math.floor(y)
-	width = stage.bulletImages[type .. '1']:getWidth() / 2
-	local bullet = hc.circle(x, y, width)
+	local bullet = hc.circle(x, y, stage.bulletImages[type .. '1']:getHeight() / 2 - 2)
 	bullet.bulletType = type
 	bullet.rotation = 0
 	bullet.clock = 0
@@ -211,118 +249,63 @@ local function updateBullet(index)
 			hc.remove(bullet)
 			table.remove(stage.bullets, index)
 		elseif stage.killBullets then
- 			explosions.spawn({x = bullet.x, y = bullet.y}, bullet.color == 'blue', false, bullet.color == 'gray')
+ 			if bullet.clock > 5 then explosions.spawn({x = bullet.x, y = bullet.y}, bullet.color == 'blue', false, bullet.color == 'gray') end
  			hc.remove(bullet)
  			table.remove(stage.bullets, index)
  		end
 	end
 end
 
-local function drawBullet(index)
-	local bullet = stage.bullets[index]
-	if bullet.visible then
-		if bullet.transparent or bullet.superTransparent then
-			if bullet.superTransparent then
-				currentStencil = masks.quarter
-				love.graphics.stencil(setStencilMask, 'replace', 1)
-			end
-			love.graphics.setStencilTest('greater', 0)
-		end
-		love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2)
-		if bullet.transparent or bullet.superTransparent then
-			if bullet.superTransparent then
-				currentStencil = masks.half
-				love.graphics.stencil(setStencilMask, 'replace', 1)
-			end
-			love.graphics.setStencilTest()
-		end
-	end
-end
-
 local function updateWaves()
-	if not currentWave then currentWave = enemies.stageFiveBoss end
+	if not currentWave then currentWave = enemies.stageOneWaveOne end
 	currentWave.func()
 	currentWave.clock = currentWave.clock + 1
 end
 
-function spawnBoss(type, attacks, moves, suicide, subUpdateFunc)
-	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
-		enemy.angle = math.pi / 2
-		enemy.speed = 1.85
-		enemy.currentAttack = 1
-		enemy.health = 300
-		enemy.started = false
-		bossHealthInit = enemy.health
-		enemy.isBoss = true
-		if subUpdateFunc then enemy.subUpdateFunc = subUpdateFunc end
-		function enemy.suicide(enemy)
-			suicide(enemy)
-		end
-	end, function(enemy)
-		if enemy.started then
-			local current = 1
-			for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
-			if enemy.currentAttack ~= current then
-				stage.killBullets = true
-				enemy.clock = -90
-				enemy.lastHealth = enemy.health
-				enemy.currentAttack = current
-			end
-			if enemy.clock >= 0 then
-				attacks[enemy.currentAttack](enemy)
-			end
-			bossHealth = enemy.health
-			if enemy.subUpdateFunc then enemy.subUpdateFunc(enemy) end
-		else
-			if enemy.lastHealth then enemy.health = enemy.lastHealth end
-			enemy.speed = enemy.speed - .02
-			if enemy.speed <= 0 then
-				enemy.speed = 0
-				enemy.clock = -1
-				enemy.started = true
-				enemy.angle = 0
-				enemy.y = math.floor(enemy.y)
-			end
-			enemy.velocity = {
-				x = math.cos(enemy.angle) * enemy.speed,
-				y = math.sin(enemy.angle) * enemy.speed
-			}
-		end
-	end)
-end
-
-function stage.prepForBoss(wave)
-	if currentWave.clock > 0 and #stage.enemies == 0 then
-		if goingToBossClock == 0 then goingToBossClock = goingToBossLimit
-		elseif goingToBossClock == 1 then
-			currentWave = enemies[wave]
-			currentWave.clock = -1
-		end
-	end
-end
-
 function stage.update()
-	for i = 1, #stage.enemies do updateEnemy(i) end
-	for i = 1, #stage.bullets do updateBullet(i) end
-	updateWaves()
-	if stage.killBullets then
-		if stage.killBulletTimer == 0 then stage.killBulletTimer = 10 end
-		stage.killBulletTimer = stage.killBulletTimer - 1
-		if stage.killBulletTimer == 0 then stage.killBullets = false end
-	end
-	stage.borderRotation = stage.borderRotation + .005
-	local mod = .001
-	if stage.borderScaleFlipped then mod = -mod end
-	stage.borderScale = stage.borderScale + mod
-	if stage.borderScale >= 1.15 then
-		stage.borderScaleFlipped = true
-	elseif stage.borderScale < 1 then
-		stage.borderScaleFlipped = false
-	end
+	if pregameClock == 0 then
+		for i = 1, #stage.enemies do updateEnemy(i) end
+		for i = 1, #stage.bullets do updateBullet(i) end
+		updateWaves()
+		if stage.killBullets then
+			if stage.killBulletTimer == 0 then stage.killBulletTimer = 10 end
+			stage.killBulletTimer = stage.killBulletTimer - 1
+			if stage.killBulletTimer == 0 then stage.killBullets = false end
+		end
+		stage.borderRotation = stage.borderRotation + .005
+		local mod = .001
+		if stage.borderScaleFlipped then mod = -mod end
+		stage.borderScale = stage.borderScale + mod
+		if stage.borderScale >= 1.15 then stage.borderScaleFlipped = true
+		elseif stage.borderScale < 1 then stage.borderScaleFlipped = false end
+	else pregameClock = pregameClock - 1 end
+end
 
+function drawEnemies()
+	for i = 1, #stage.enemies do
+		local enemy = stage.enemies[i]
+		if enemy.isBoss then
+			startStencil('quarter')
+			local tempBorderScale = 1.25
+			love.graphics.setColor(colors.blueDark)
+			love.graphics.draw(stage.border, enemy.x, enemy.y, stage.borderRotation, stage.borderScale * tempBorderScale * 1.1, stage.borderScale * tempBorderScale, stage.border:getWidth() / 2, stage.border:getHeight() / 2)
+			love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, 1, 1, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
+			startStencil('half')
+			love.graphics.draw(stage.glow, enemy.x, enemy.y, -stage.borderRotation, .75, .75, stage.glow:getWidth() / 2, stage.glow:getHeight() / 2)
+			love.graphics.setColor(colors.white)
+			endStencil()
+		end
+		love.graphics.draw(enemy.image, enemy.x + gameX, enemy.y + gameY, enemy.rotation, 1, 1, enemy.image:getWidth() / 2, enemy.image:getHeight() / 2)
+	end
+end
+
+local function drawBullets()
+	for i = 1, #stage.bullets do
+		local bullet = stage.bullets[i]
+		if bullet.visible and bullet.image then love.graphics.draw(bullet.image, bullet.x + gameX, bullet.y + gameY, bullet.rotation, 1, 1, bullet.image:getWidth() / 2, bullet.image:getHeight() / 2) end
+	end
 end
 
 function stage.draw()
-	for i = 1, #stage.enemies do drawEnemy(i) end
-	for i = 1, #stage.bullets do drawBullet(i) end
+	drawBullets()
 end

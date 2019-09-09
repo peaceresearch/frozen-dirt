@@ -13,7 +13,8 @@ background = {
   tileSize = 64,
   grass = { },
 	bottomCam = pm.newCamera(gameWidth + gameX * 2, winHeight + gameY * 2, 0, 0, -math.pi / 2, 32, 1, 1),
-  middleCam = pm.newCamera(gameWidth + gameX * 2, winHeight + gameY * 2, 0, 0, -math.pi / 2, 32, 1, 1)
+  middleCam = pm.newCamera(gameWidth + gameX * 2, winHeight + gameY * 2, 0, 0, -math.pi / 2, 32, 1, 1),
+	middleOffset = -grid * 4.75 - 1
 }
 
 background.load = function()
@@ -30,15 +31,12 @@ end
 
 background.draw = function()
   local planeScale = .2
-	local offset = -grid * 4.75 - 1
 	pm.drawPlane(background.bottomCam, background.images.bottom, 0, background.bottomStep, planeScale, planeScale, true)
-	pm.drawPlane(background.middleCam, background.images.middle, offset, background.middleStep, planeScale, planeScale, true)
+	pm.drawPlane(background.middleCam, background.images.middle, background.middleOffset, background.middleStep, planeScale, planeScale, true)
 	love.graphics.draw(background.images.fade, gameX, gameY - 1)
 	love.graphics.setColor(colors.black)
-	currentStencil = masks.half
-	love.graphics.stencil(setStencilMask, 'replace', 1)
-	love.graphics.setStencilTest('greater', 0)
+	startStencil('half')
 	love.graphics.rectangle('fill', gameX, gameY, gameWidth, winHeight)
-  love.graphics.setStencilTest()
+	endStencil()
 	love.graphics.setColor(colors.white)
 end

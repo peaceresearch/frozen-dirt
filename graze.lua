@@ -34,7 +34,7 @@ function graze.update()
 end
 
 function graze.draw()
-	currentStencil = masks.quarter
+	currentStencil = masks.half
 	love.graphics.stencil(setStencilMask, 'replace', 1)
 	love.graphics.setStencilTest('greater', 0)
 	for i, v in ipairs(graze.graze) do

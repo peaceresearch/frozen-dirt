@@ -34,6 +34,7 @@ local function updateDrop(index)
 		then
 			if drop.collected then
 				currentScore = currentScore + 100
+				if player.power < 3 then player.power = player.power + .025 end
 			end
 			hc.remove(drop)
 			table.remove(drops.dump, index)

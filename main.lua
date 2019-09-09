@@ -1,52 +1,24 @@
 math.tau = math.pi * 2
 hc = require('lib/hc')
--- winWidth = 640
--- winHeight = 480
 winWidth = 240
 winHeight = 320
 gameScale = 3
 grid = 16
--- gameWidth = grid * 24
--- gameHeight = grid * 28
 gameWidth = winWidth
 gameHeight = winHeight
--- gameX = winWidth / 2 - gameWidth / 2
--- gameY = grid
 gameX = 0
 gameY = 0
 colors = {
-
-	-- 32 colors
-	purpleDark = '222034',
-	purple = '45283c',
-  purpleLight = '76428a',
-  pink = 'd77bba',
-	red = 'ac3232',
-  redLight = 'd95763',
-  blueMid = '639bff',
-	blueDark = '306082',
-	blueDarkest = '3f3f74',
-  blue = '5b6ee1',
-	blueLightest = '5fcde4',
-  orange = 'd27d2c',
-	grayDark = '595652',
-  gray = '696a6a',
-	grayLight = '847e87',
-	grayLightest = '9badb7',
-  yellow = 'dad45e',
-	greenDarkest = '323c39',
-
-
-
-	-- here be uhhh new colors
+	-- db16 by dawnbringer
 	black = '140c1c',
 	purple = '442434',
 	blueDark = '30346d',
 	blue = '597dce',
 	blueLight = '6dc2ca',
+	red = 'd04648',
 	offWhite = 'deeed6',
+	grayLight = '8595a1',
 	white = 'ffffff'
-
 }
 gameClock = 0
 highScore = 0
@@ -54,7 +26,7 @@ currentScore = 0
 currentGraze = 0
 paused = false
 gameOver = false
-started = true
+started = false
 aniTime = 25
 dt = 0
 frameLimit = 1 / 60
@@ -86,6 +58,9 @@ bossHealth = 0
 bossName = ''
 bossSpell = ''
 currentStage = 1
+paused = false
+isFullscreen = false
+isTate = false
 
 require('start')
 require('controls')
@@ -99,20 +74,18 @@ require('explosions')
 require('collision')
 require('chrome')
 
-local setupColors = function()
+local function setupColors()
   for color, v in pairs(colors) do
     local _, _, r, g, b, a = colors[color]:find('(%x%x)(%x%x)(%x%x)')
     colors[color] = {tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255, 1}
   end
-	colors.transparent = {1, 1, 1, .5}
-	colors.transparentBlack = {0, 0, 0, .67}
 end
 
-getAngle = function(b, a)
+function getAngle(b, a)
   return math.atan2(a.y - b.y, a.x - b.x)
 end
 
-drawLabel = function(input, x, y, labelColor, alignObject)
+function drawLabel(input, x, y, labelColor, alignObject)
   input = string.upper(input)
   local color = colors.offWhite
 	local align = 'left'
@@ -127,11 +100,9 @@ drawLabel = function(input, x, y, labelColor, alignObject)
 	love.graphics.setColor(color)
   love.graphics.printf(input, x, y, limit, align)
 	love.graphics.setColor(colors.white)
-  -- love.graphics.print({colors.black, input}, x + 1, y + 1, 0, 1, 1, oX, 0)
-	-- love.graphics.print({color, input}, x, y, 0, 1, 1, oX, 0)
 end
 
-startGame = function()
+function startGame()
 	background.load()
 	drops.load()
 	player.load()
@@ -141,7 +112,17 @@ startGame = function()
 	loadChrome()
 end
 
-love.load = function()
+function startStencil(mask)
+	currentStencil = masks[mask]
+	love.graphics.stencil(setStencilMask, 'replace', 1)
+	love.graphics.setStencilTest('greater', 0)
+end
+
+function endStencil()
+  love.graphics.setStencilTest()
+end
+
+function love.load()
   love.window.setTitle('凍結塵芥')
   container = love.graphics.newCanvas(winWidth, winHeight)
   container:setFilter('nearest', 'nearest')
@@ -151,26 +132,29 @@ love.load = function()
   font:setFilter('nearest', 'nearest')
   love.graphics.setFont(font)
   setupColors()
+  loadControls()
 	if started then startGame()
 	else start.load() end
 end
 
-love.update = function(d)
+function love.update(d)
   dt = d
-  controls.update()
+  updateControls()
 	if started then
-	  background.update()
-		drops.update()
-	  player.update()
-	  stage.update()
-		graze.update()
-	  explosions.update()
-	  collision.update()
+		if not paused then
+		  background.update()
+			drops.update()
+		  player.update()
+		  stage.update()
+			graze.update()
+		  explosions.update()
+		  collision.update()
+		end
 		updateChrome()
 	else start.update() end
 end
 
-love.draw = function()
+function love.draw()
   container:renderTo(love.graphics.clear)
   love.graphics.setCanvas({
     container,
@@ -181,6 +165,7 @@ love.draw = function()
 	if started then
 	  background.draw()
 		drops.draw()
+		drawEnemies()
 	  player.draw()
 	  stage.draw()
 		player.drawBullets()
@@ -190,8 +175,20 @@ love.draw = function()
 	else start.draw() end
   love.graphics.setCanvas()
   local windowX = 0
-  love.graphics.draw(container, windowX, 0, 0, gameScale, gameScale)
-  gameClock = gameClock + 1
+	local windowY = 0
+	local rotation = 0
+	local fullscreenWidth, fullscreenHeight = love.window.getDesktopDimensions()
+	if isFullscreen then
+		windowX = fullscreenWidth / 2 - gameWidth / 2 * gameScale
+	end
+	if isTate then
+		rotation = -math.pi / 2
+		windowX = fullscreenWidth / 2 - gameHeight / 2 * gameScale
+		windowY = fullscreenHeight
+		-- windowX = -gameHeight * 2
+	end
+  love.graphics.draw(container, windowX, windowY, rotation, gameScale, gameScale)
+  if not paused then gameClock = gameClock + 1 end
   if dt < frameLimit then
     return love.timer.sleep(frameLimit - dt)
   end

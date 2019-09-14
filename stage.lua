@@ -19,7 +19,7 @@ currentWave = nil
 
 bossOffset = grid * 5
 
-pregameLimit = 220
+pregameLimit = 180
 pregameClock = pregameLimit
 
 function stage.load()
@@ -55,78 +55,74 @@ function stage.load()
 end
 
 function stage.spawnEnemy(type, x, y, initFunc, updateFunc)
-	x = math.floor(x)
-	y = math.floor(y)
-	local enemy = hc.circle(x + gameX, y + gameY, stage.enemyImages[type].idle1:getWidth() / 2)
-	enemy.image = stage.enemyImages[type].idle1
-	enemy.images = stage.enemyImages[type]
-	enemy.colliderType = 'enemy'
-	enemy.clock = 0
-	enemy.health = 1
-	enemy.x = x
-	enemy.y = y
-	enemy.lastX = x
-	enemy.rotation = 0
-	enemy.movingLeftClock = 0
-	enemy.movingRightClock = 0
-	if initFunc then initFunc(enemy) end
-	if updateFunc then enemy.updateFunc = updateFunc end
-	table.insert(stage.enemies, enemy)
+	if not gameOver then
+		x = math.floor(x)
+		y = math.floor(y)
+		local enemy = hc.circle(x + gameX, y + gameY, stage.enemyImages[type].idle1:getWidth() / 2)
+		enemy.image = stage.enemyImages[type].idle1
+		enemy.images = stage.enemyImages[type]
+		enemy.colliderType = 'enemy'
+		enemy.clock = 0
+		enemy.health = 1
+		enemy.x = x
+		enemy.y = y
+		enemy.lastX = x
+		enemy.rotation = 0
+		enemy.movingLeftClock = 0
+		enemy.movingRightClock = 0
+		if initFunc then initFunc(enemy) end
+		if updateFunc then enemy.updateFunc = updateFunc end
+		table.insert(stage.enemies, enemy)
+	end
 end
 
-function spawnBoss(type, attacks, moves, suicide, subUpdateFunc)
-	stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
-		enemy.angle = math.pi / 2
-		enemy.speed = 1.85
-		enemy.currentAttack = 1
-		enemy.health = 300
-		enemy.started = false
-		bossHealthInit = enemy.health
-		enemy.isBoss = true
-		if subUpdateFunc then enemy.subUpdateFunc = subUpdateFunc end
-		function enemy.suicide(enemy)
-			suicide(enemy)
-		end
-	end, function(enemy)
-		if enemy.started then
-			local current = 1
-			for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
-			if enemy.currentAttack ~= current then
-				stage.killBullets = true
-				enemy.clock = -90
-				enemy.lastHealth = enemy.health
-				enemy.currentAttack = current
+function spawnBoss(type, attacks, moves, suicide, subUpdateFunc, altHealth)
+	if not bossActive then
+		stage.spawnEnemy(type, gameWidth / 2, -stage.enemyImages.cirno.idle1:getHeight() / 2, function(enemy)
+			enemy.angle = math.pi / 2
+			enemy.speed = 1.85
+			enemy.currentAttack = 1
+			enemy.health = 300
+			if altHealth then enemy.health = altHealth end
+			enemy.started = false
+			bossHealthInit = enemy.health
+			enemy.isBoss = true
+			if subUpdateFunc then enemy.subUpdateFunc = subUpdateFunc end
+			function enemy.suicide(enemy)
+				suicide(enemy)
+				bossActive = false
 			end
-			if enemy.clock >= 0 then
-				attacks[enemy.currentAttack](enemy)
+		end, function(enemy)
+			if enemy.started then
+				local current = 1
+				for i = 1, #attacks do if enemy.health >= bossHealthInit / #attacks * (i - 1) then current = #attacks - i + 1 end end
+				if enemy.currentAttack ~= current then
+					stage.killBullets = true
+					enemy.clock = -90
+					enemy.lastHealth = enemy.health
+					enemy.currentAttack = current
+				end
+				if enemy.clock >= 0 then
+					attacks[enemy.currentAttack](enemy)
+				end
+				bossHealth = enemy.health
+				if enemy.subUpdateFunc then enemy.subUpdateFunc(enemy) end
+			else
+				if enemy.lastHealth then enemy.health = enemy.lastHealth end
+				enemy.speed = enemy.speed - .02
+				if enemy.speed <= 0 then
+					enemy.speed = 0
+					enemy.clock = -1
+					enemy.started = true
+					enemy.angle = 0
+					enemy.y = math.floor(enemy.y)
+				end
+				enemy.velocity = {
+					x = math.cos(enemy.angle) * enemy.speed,
+					y = math.sin(enemy.angle) * enemy.speed
+				}
 			end
-			bossHealth = enemy.health
-			if enemy.subUpdateFunc then enemy.subUpdateFunc(enemy) end
-		else
-			if enemy.lastHealth then enemy.health = enemy.lastHealth end
-			enemy.speed = enemy.speed - .02
-			if enemy.speed <= 0 then
-				enemy.speed = 0
-				enemy.clock = -1
-				enemy.started = true
-				enemy.angle = 0
-				enemy.y = math.floor(enemy.y)
-			end
-			enemy.velocity = {
-				x = math.cos(enemy.angle) * enemy.speed,
-				y = math.sin(enemy.angle) * enemy.speed
-			}
-		end
-	end)
-end
-
-function prepForBoss(wave)
-	if currentWave.clock > 0 and #stage.enemies == 0 then
-		if goingToBossClock == 0 then goingToBossClock = goingToBossLimit
-		elseif goingToBossClock == 1 then
-			currentWave = enemies[wave]
-			currentWave.clock = -1
-		end
+		end)
 	end
 end
 
@@ -263,9 +259,9 @@ local function updateWaves()
 end
 
 function stage.update()
+	for i = 1, #stage.enemies do updateEnemy(i) end
+	for i = 1, #stage.bullets do updateBullet(i) end
 	if pregameClock == 0 then
-		for i = 1, #stage.enemies do updateEnemy(i) end
-		for i = 1, #stage.bullets do updateBullet(i) end
 		updateWaves()
 		if stage.killBullets then
 			if stage.killBulletTimer == 0 then stage.killBulletTimer = 10 end
@@ -278,7 +274,11 @@ function stage.update()
 		stage.borderScale = stage.borderScale + mod
 		if stage.borderScale >= 1.15 then stage.borderScaleFlipped = true
 		elseif stage.borderScale < 1 then stage.borderScaleFlipped = false end
-	else pregameClock = pregameClock - 1 end
+	else
+		if currentWave then currentWave.clock = -1 end
+		pregameClock = pregameClock - 1
+	end
+
 end
 
 function drawEnemies()

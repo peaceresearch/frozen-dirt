@@ -22,11 +22,13 @@ local showingDisplayOptions = false
 
 start.load = function()
   for type, img in pairs(start.images) do start.images[type]:setFilter('nearest', 'nearest')  end
+	sound.playBgm('title')
 end
 
 local function updateMenuDirections()
 	if controls.down and not pressingDown then
 		pressingDown = true
+		sound.playSfx('changeselect')
 		if showingDisplayOptions then
 			activeDisplayOption = activeDisplayOption + 1
 			if activeDisplayOption > #displayOptions then activeDisplayOption = 1 end
@@ -37,6 +39,7 @@ local function updateMenuDirections()
 	elseif not controls.down and pressingDown then pressingDown = false end
 	if controls.up and not pressingUp then
 		pressingUp = true
+		sound.playSfx('changeselect')
 		if showingDisplayOptions then
 			activeDisplayOption = activeDisplayOption - 1
 			if activeDisplayOption < 1 then activeDisplayOption = #displayOptions end
@@ -50,12 +53,15 @@ local function updateMenuDirections()
 end
 
 local function updateMenuSelect()
-	if activeOption == 1 and controls.shoot and not pressingSelect and not started then
-		startGame()
-		started = true
-	elseif activeOption == 2 and controls.shoot and not pressingSelect then showingHighScores = true
-	elseif activeOption == 3 and controls.shoot and not pressingSelect then showingDisplayOptions = true
-	elseif activeOption == 4 and controls.shoot and not pressingSelect then love.event.quit() end
+	if controls.shoot then
+		sound.playSfx('startgame')
+		if activeOption == 1 and not pressingSelect and not started then
+			startGame()
+			started = true
+		elseif activeOption == 2 and not pressingSelect then showingHighScores = true
+		elseif activeOption == 3 and not pressingSelect then showingDisplayOptions = true
+		elseif activeOption == 4 and not pressingSelect then love.event.quit() end
+	end
 end
 
 local function updateHighScores()
@@ -65,31 +71,36 @@ local function updateHighScores()
 end
 
 local function updateDisplayOptions()
-	local windowResolution = false
+	-- local windowResolution = false
 	if controls.shoot and not pressingSelect then
+		print('o')
 		if activeDisplayOption == 1 or activeDisplayOption == 2 or activeDisplayOption == 3 then
 			gameScale = activeDisplayOption
-			windowResolution = true
 			isFullscreen = false
 			isTate = false
-		elseif activeDisplayOption == 4 or activeDisplayOption == 5 then
-			gameScale = 1
-			love.window.setMode(0, 0, {display = 1, fullscreen = true, x = 240})
-			if activeDisplayOption == 5 then
-				isTate = true
-				gameScale = love.graphics.getHeight() / gameWidth
-			else
-				isTate = false
-				gameScale = love.graphics.getHeight() / gameHeight
-			end
-			love.window.setMode(0, 0, {display = 1, fullscreen = true, x = 240})
-			isFullscreen = true
-		elseif activeDisplayOption == 6 then
-			showingDisplayOptions = false
-			activeDisplayOption = 1
 		end
+		love.window.setMode(winWidth * gameScale, winHeight * gameScale, {vsync = false})
+
+	-- 	if windowResolution then  end
+	-- 	if activeDisplayOption == 4 or activeDisplayOption == 5 then
+	-- 		gameScale = 1
+	-- 		if activeDisplayOption == 5 then
+	-- 			isTate = true
+	-- 			gameScale = love.graphics.getHeight() / gameWidth
+	-- 		else
+	-- 			isTate = false
+	-- 			gameScale = love.graphics.getHeight() / gameHeight
+	-- 			print(love.graphics.getHeight())
+	-- 		end
+	-- 		love.window.setFullscreen(true, 'desktop')
+	-- 		isFullscreen = true
+	-- 	elseif activeDisplayOption == 6 then
+	-- 		showingDisplayOptions = false
+	-- 		activeDisplayOption = 1
+	-- 		if isFullscreen then love.window.setFullscreen(true, 'desktop') end
+	-- 	end
+		-- print(gameScale)
 	end
-	if windowResolution then love.window.setMode(winWidth * gameScale, winHeight * gameScale, {vsync = false}) end
 end
 
 start.update = function()
@@ -126,7 +137,9 @@ local function drawHighScores()
 	drawLabel(highScoreStr, gameWidth / 2 - #highScoreStr * 8 / 2, y)
 	y = y + grid * 2.25
 	for i = 1, 5 do
-		local scoreStr = tostring(i) .. '. ' .. '---' .. ' ' .. processScore(0)
+		local scoreNum = 0
+		if scoreTable[i] then scoreNum = scoreTable[i] end
+		local scoreStr = tostring(i) .. '. ' .. processScore(scoreNum)
 		drawLabel(scoreStr, gameWidth / 2 - #scoreStr * 8 / 2, y)
 		y = y + grid
 	end

@@ -64,6 +64,7 @@ enemies.stageOneWaveOne = enemyObj(function()
 		local speed = 1.5
 		local mod = math.pi / 9
 		local angle = getAngle(enemy, player) - mod
+		sound.playSfx('bullet1')
 		for i = 1, 3 do
 			stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
 				bullet.velocity = {
@@ -115,6 +116,7 @@ enemies.stageOneWaveTwo = enemyObj(function()
 		local function spawnBullets(enemy)
 			local angle = enemy.bulletAngle
 			local count = 5
+			sound.playSfx('bullet2')
 			for i = 1, count do
 				stage.spawnBullet('big', enemy.x, enemy.y, function(bullet)
 					bullet.speed = 3
@@ -178,6 +180,7 @@ enemies.stageOneWaveTwo = enemyObj(function()
 			local x = enemy.bulletPos.x + math.cos(offsetAngle) * offset
 			local y = enemy.bulletPos.y + math.sin(offsetAngle) * offset
 			local speed = 2
+			sound.playSfx('bullet1')
 			stage.spawnBullet('arrow', x, y, function(bullet)
 				bullet.rotation = angle
 				bullet.velocity = {
@@ -237,6 +240,7 @@ enemies.stageOneWaveThree = enemyObj(function()
 		local count = 21
 		local angle = enemy.bulletAngle
 		local speed = 1.75
+		sound.playSfx('bullet2')
 		for i = 0, count do
 			stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
 				bullet.velocity = {
@@ -255,7 +259,7 @@ enemies.stageOneWaveThree = enemyObj(function()
 		stage.spawnEnemy('fairyred', gameWidth / 2, -stage.enemyImages.fairyred.idle1:getHeight() / 2, function(enemy)
 			enemy.angle = math.pi / 2
 			enemy.speed = 1.5
-			enemy.health = 40
+			enemy.health = 25
 		end, function(enemy)
 			if enemy.speed > .25 then
 				enemy.speed = enemy.speed - .015
@@ -264,6 +268,11 @@ enemies.stageOneWaveThree = enemyObj(function()
 					y = math.sin(enemy.angle) * enemy.speed
 				}
 				enemy.clock = -1
+				function enemy.suicide()
+					currentWave = enemies.stageOneBoss
+					currentWave.clock = -goingToBossLimit
+					goingToBossClock = goingToBossLimit
+				end
 			else
 				local interval = 15
 				local limit = interval * 4
@@ -279,11 +288,9 @@ enemies.stageOneWaveThree = enemyObj(function()
 		end)
 	end
 	if currentWave.clock == 0 then spawnEnemy() end
-	prepForBoss('stageOneBoss')
 end)
 
 enemies.stageOneBoss = enemyObj(function()
-
 	local attacks = {
 		function(enemy)
 			local function lasers()
@@ -292,6 +299,7 @@ enemies.stageOneBoss = enemyObj(function()
 					angle = angle - mod
 					angle = angle + mod * 2 * math.random()
 					local speed = 2
+					sound.playSfx('bullet1')
 					stage.spawnBullet('arrow', x, enemy.y, function(bullet)
 						bullet.rotation = angle
 						bullet.velocity = {
@@ -316,6 +324,7 @@ enemies.stageOneBoss = enemyObj(function()
 			end
 			local function spray()
 				local function spawnBullets(x)
+					sound.playSfx('bullet2')
 					local count = 15
 					local angle = -math.pi / 2
 					for i = 1, count do
@@ -362,6 +371,7 @@ enemies.stageOneBoss = enemyObj(function()
 				end
 				local interval = 6
 				if enemy.clock % interval == 0 then
+					if enemy.clock % (interval * 4) == 0 then sound.playSfx('bullet1') end
 					spawnBullet(enemy.x - bossOffset)
 					spawnBullet(enemy.x + bossOffset)
 					local explosionInterval = 2
@@ -390,6 +400,7 @@ enemies.stageOneBoss = enemyObj(function()
 				local interval = 6
 				if enemy.clock % interval == 0 then
 					local diff = 3
+					if enemy.clock % (interval * 2) == 0 then sound.playSfx('bullet2') end
 					spawnBullet(enemy.x - bossOffset - diff)
 					spawnBullet(enemy.x - bossOffset + diff)
 					spawnBullet(enemy.x + bossOffset - diff)
@@ -404,22 +415,23 @@ enemies.stageOneBoss = enemyObj(function()
 	if currentWave.clock == 0 then
 		spawnBoss('cirno', attacks, moves, function()
 			stage.killBullets = true
-			clearedStageClock = clearedStageLimit
+			if pregameClock ~= pregameLimit then currentStage = currentStage + 1 end
 			currentWave = enemies.stageTwoWaveOne
-			currentWave.clock = -clearedStageLimit
+			pregameClock = pregameLimit
+			player.bombs = player.bombs + 1
 		end, function(enemy)
 			sideSideMove(enemy)
-		end)
+		end, 250)
 	end
 
 end)
-
 
 -- STAGE 2
 enemies.stageTwoWaveOne = enemyObj(function()
 	local function spawnBullet(enemy)
 		local angle = getAngle(enemy, player)
 		local speed = 1.65
+		sound.playSfx('bullet1')
 		stage.spawnBullet('big', enemy.x, enemy.y, function(bullet)
 			bullet.velocity = {
 				x = math.cos(angle) * speed,
@@ -472,6 +484,9 @@ enemies.stageTwoWaveTwo = enemyObj(function()
 		if enemy.opposite then
 			img = 'small'
 			speed = 1.35
+			sound.playSfx('bullet1')
+		else
+			sound.playSfx('bullet2')
 		end
 		stage.spawnBullet(img, enemy.x, enemy.y, function(bullet)
 			bullet.velocity = {
@@ -525,6 +540,7 @@ end)
 enemies.stageTwoWaveThree = enemyObj(function()
 	local function spawnBullet(enemy)
 		local speed = 1.75
+		sound.playSfx('bullet1')
 		stage.spawnBullet('arrow', enemy.x, enemy.y, function(bullet)
 			bullet.velocity = {
 				x = math.cos(enemy.laserAngle) * speed,
@@ -533,7 +549,7 @@ enemies.stageTwoWaveThree = enemyObj(function()
 			bullet.rotation = enemy.laserAngle
 		end)
 	end
-	local function spawnEnemy(x)
+	local function spawnEnemy(x, last)
 		local angle = math.pi / 2
 		local speed = .75
 		stage.spawnEnemy('fairyred', x, -stage.enemyImages.fairyred.idle1:getHeight() / 2, function(enemy)
@@ -542,6 +558,13 @@ enemies.stageTwoWaveThree = enemyObj(function()
 				y = math.sin(angle) * speed
 			}
 			enemy.health = 3
+			if last then
+				function enemy.suicide()
+					currentWave = enemies.stageTwoBoss
+					currentWave.clock = -goingToBossLimit
+					goingToBossClock = goingToBossLimit
+				end
+			end
 		end, function(enemy)
 			local interval = 100
 			local bInterval = 20
@@ -557,22 +580,22 @@ enemies.stageTwoWaveThree = enemyObj(function()
 	end
 	local interval = 90
 	if currentWave.clock % interval == 0 and currentWave.clock < interval * 5 then
+		bossReady = true
 		local x = math.floor(gameWidth / 3 * math.random()) + gameWidth / 6
 		local sX = x + math.random() * gameWidth / 2
 		local mod = grid * 5
 		if sX < x + mod then sX = sX + mod end
 		if sX > gameWidth - gameWidth / 6 then sX = gameWidth - gameWidth / 6 end
 		spawnEnemy(x)
-		spawnEnemy(sX)
+		spawnEnemy(sX, true)
 	end
-	prepForBoss('stageTwoBoss')
 end)
 
 enemies.stageTwoBoss = enemyObj(function()
 	local attacks = {
 		function(enemy)
 			local function sweeper()
-				local speed = 2
+				local speed = 1.75
 				local interval = 5
 				local limit = interval * 10
 				local max = limit * 2
@@ -607,6 +630,7 @@ enemies.stageTwoBoss = enemyObj(function()
 						if enemy.sweepDirection == 1 then enemy.sweepAngle = sweepMod end
 					end
 					for i = 1, 5 do
+						sound.playSfx('bullet1')
 						spawnBullet(false, i - 1)
 						spawnBullet(true, i - 1)
 					end
@@ -638,7 +662,6 @@ enemies.stageTwoBoss = enemyObj(function()
 				local interval = 5
 				local limit = interval * 4
 				local max = limit * 3
-
 				if enemy.clock % interval == 0 and enemy.clock % max < limit then
 					if enemy.clock % max == 0 then
 						enemy.boltAngleA = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
@@ -646,12 +669,18 @@ enemies.stageTwoBoss = enemyObj(function()
 					end
 					local mod = enemy.clock % max / interval
 					if enemy.clock % (max * 2) < max then
-						if enemy.clock % max == 0 then explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true, true) end
+						if enemy.clock % max == 0 then
+							explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true, true)
+							sound.playSfx('bullet2')
+						end
 						spawnBullets(mod, false, false, true)
 						spawnBullets(mod)
 						spawnBullets(mod, false, true)
 					else
-						if enemy.clock % max == 0 then explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true, true) end
+						if enemy.clock % max == 0 then
+							explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true, true)
+							sound.playSfx('bullet2')
+						end
 						spawnBullets(mod, true, false, true)
 						spawnBullets(mod, true)
 						spawnBullets(mod, true,true)
@@ -665,9 +694,10 @@ enemies.stageTwoBoss = enemyObj(function()
 		function(enemy)
 			local function ring()
 				local function spawnBullets()
+					sound.playSfx('bullet1')
 					local angle = enemy.ringAngle
 					local count = 15
-					local speed = 2
+					local speed = 1.5
 					for i = 1, count do
 						stage.spawnBullet('smalllight', enemy.x + bossOffset, enemy.y, function(bullet)
 							bullet.velocity = {
@@ -679,7 +709,7 @@ enemies.stageTwoBoss = enemyObj(function()
 					end
 					enemy.ringAngle = enemy.ringAngle + .15
 				end
-				local interval = 25
+				local interval = 30
 				if enemy.clock == 0 then enemy.ringAngle = -math.pi / 2 end
 				if enemy.clock % interval == 0 then spawnBullets() end
 				if enemy.clock % (interval * 2) == 0 then explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true) end
@@ -687,9 +717,9 @@ enemies.stageTwoBoss = enemyObj(function()
 			local function splash()
 				local interval = 6
 				local limit = interval * 5
-				local max = limit * 3
+				local max = limit * 3.5
 				local function spawnBullet(opposite, hidden)
-					local speed = 2
+					local speed = 1.75
 					speed = speed + (enemy.clock % max + 1) * .05
 					local offset = grid - 2
 					local angle = getAngle(enemy, enemy.arrowTarget)
@@ -707,6 +737,7 @@ enemies.stageTwoBoss = enemyObj(function()
 				end
 				if enemy.clock % max == 0 then enemy.arrowTarget = {x = player.x, y = player.y} end
 				if enemy.clock >= max and enemy.clock % interval == 0 and enemy.clock % max < limit then
+					sound.playSfx('bullet2')
 					spawnBullet(false, true)
 					spawnBullet()
 					spawnBullet(true)
@@ -714,14 +745,15 @@ enemies.stageTwoBoss = enemyObj(function()
 			end
 			local function spray()
 				local function spawnBullets()
+					sound.playSfx('bullet2')
 					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
 					local count = 5
 					local mod = math.pi / 9
 					local angle = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player) - mod * 2
 					for i = 1, count do
-						local speed = 2
+						local speed = 1.75
 						for j = 1, 5 do
-							local jSpeed = speed + j * .2
+							local jSpeed = speed + j * .15
 							stage.spawnBullet('bullet', enemy.x - bossOffset, enemy.y, function(bullet)
 								bullet.velocity = {
 									x = math.cos(angle) * jSpeed,
@@ -733,7 +765,7 @@ enemies.stageTwoBoss = enemyObj(function()
 						angle = angle + mod
 					end
 				end
-				local interval = 120
+				local interval = 160
 				if enemy.clock % interval == 0 and enemy.clock > interval then spawnBullets() end
 			end
 			ring()
@@ -743,9 +775,10 @@ enemies.stageTwoBoss = enemyObj(function()
 		function(enemy)
 			local function ring()
 				local function spawnBullets()
-					local count = 50
-					local speed = 2
+					local count = 40
+					local speed = 1.5
 					local angle = getAngle(enemy, player)
+					sound.playSfx('bullet2')
 					for i = 0, count do
 						if i < count / 4 or i > count / 4 * 3 + 2 then
 							local jCount = 5
@@ -771,7 +804,8 @@ enemies.stageTwoBoss = enemyObj(function()
 				local function spawnBullet(x)
 					local mod = .02
 					angle = enemy.laserAngle - mod + mod * 2 * math.random()
-					local speed = 2.5
+					local speed = 1.75
+					sound.playSfx('bullet1')
 					stage.spawnBullet('arrowlight', x, enemy.y, function(bullet)
 						bullet.velocity = {
 							x = math.cos(angle) * speed,
@@ -780,8 +814,8 @@ enemies.stageTwoBoss = enemyObj(function()
 						bullet.rotation = angle
 					end)
 				end
-				local interval = 10
-				local limit = interval * 10
+				local interval = 15
+				local limit = interval * 4
 				local max = limit * 1.5
 				if enemy.clock % interval == 0 and enemy.clock % max < limit then
 					local x = enemy.x - bossOffset
@@ -793,19 +827,86 @@ enemies.stageTwoBoss = enemyObj(function()
 			end
 			ring()
 			sides()
+		end,
+		function(enemy)
+			local function laser()
+				local speed = 3
+				local function spawnBullet()
+					angle = getAngle(enemy, enemy.laserTarget)
+					stage.spawnBullet('bolt', enemy.x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+						bullet.rotation = angle
+						if i == 1 then bullet.visible = false end
+					end)
+				end
+				local interval = 10
+				local limit = interval * 10
+				local max = limit * 2
+				if enemy.clock % interval == 0 and enemy.clock % max < limit then
+					if enemy.clock % max == 0 then
+						enemy.laserTarget = {x = player.x, y = player.y}
+					end
+					if enemy.clock % (interval * 2) == 0 then sound.playSfx('bullet1') end
+					spawnBullet()
+				end
+			end
+			local function sides()
+				local function spawnBullets()
+					sound.playSfx('bullet2')
+					local angle = enemy.bulletAngle
+					local x = enemy.bulletX
+					local count = 40
+					local speed = 1.75
+					local diff = math.pi / 3
+					for i = 1, count do
+						if angle < enemy.bulletAngle + diff or angle >= enemy.bulletAngle + math.tau - diff then
+							stage.spawnBullet('smalllight', x, enemy.y, function(bullet)
+								bullet.velocity = {
+									x = math.cos(angle) * speed,
+									y = math.sin(angle) * speed
+								}
+							end)
+						end
+						angle = angle + math.tau / count
+					end
+				end
+				local interval = 20
+				local limit = interval * 2
+				local max = limit * 1.5
+				if enemy.clock % interval == 0 and enemy.clock % max < limit then
+					if enemy.clock % max == 0 then
+						if enemy.clock % (max * 2) < max then
+							enemy.bulletAngle = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
+							enemy.bulletX = enemy.x - bossOffset
+						else
+							enemy.bulletAngle = getAngle({x = enemy.x + bossOffset, y = enemy.y}, player)
+							enemy.bulletX = enemy.x + bossOffset
+						end
+						explosions.spawn({x = enemy.bulletX, y = enemy.y}, true, true)
+					end
+					spawnBullets()
+				end
+			end
+			laser()
+			sides()
 		end
 	}
 	local moves = {}
 	if currentWave.clock == 0 then
 		spawnBoss('cirno', attacks, moves, function()
 			stage.killBullets = true
-			clearedStageClock = clearedStageLimit
+			if pregameClock ~= pregameLimit then currentStage = currentStage + 1 end
+			currentWave = enemies.stageThreeWaveOne
+			pregameClock = pregameLimit
+			player.bombs = player.bombs + 1
 		end, function(enemy)
 			sideSideMove(enemy)
-		end)
+		end, 400)
 	end
 end)
-
 
 -- STAGE 3
 enemies.stageThreeWaveOne = enemyObj(function()
@@ -826,6 +927,7 @@ enemies.stageThreeWaveOne = enemyObj(function()
 				bullet.rotation = angle
 			end)
 		end
+		sound.playSfx('bullet2')
 		spawnBullet()
 		spawnBullet(true)
 	end
@@ -850,7 +952,7 @@ enemies.stageThreeWaveOne = enemyObj(function()
 		stage.spawnEnemy('fairygreen', x, y, function(enemy)
 			enemy.angle = -math.pi / 4
 			enemy.speed = .75
-			enemy.health = 8
+			enemy.health = 6
 			if opposite then enemy.opposite = true end
 		end, function(enemy)
 			enemy.velocity = {
@@ -872,7 +974,7 @@ enemies.stageThreeWaveOne = enemyObj(function()
 			else
 				local interval = 5
 				local limit = interval * 8
-				local max = limit * 1.5
+				local max = limit * 2
 				if enemy.clock % interval == 0 and enemy.clock % max < limit then
 					if not enemy.ringAngle then
 						enemy.ringAngle = getAngle(enemy, player) - math.pi / 2
@@ -881,6 +983,7 @@ enemies.stageThreeWaveOne = enemyObj(function()
 					if enemy.clock % max == 0 then
 						enemy.ringMod = enemy.ringMod * -1
 					end
+					if enemy.clock % (interval * 3) == 0 then sound.playSfx('bullet1') end
 					spawnRing(enemy)
 					enemy.ringAngle = enemy.ringAngle + enemy.ringMod
 				end
@@ -889,13 +992,19 @@ enemies.stageThreeWaveOne = enemyObj(function()
 		end)
 	end
 	local interval = 100
+	if currentWave.clock == 0 then sound.playBgm('boss1') end
 	if currentWave.clock % interval == 0 and currentWave.clock < interval * 8 then
 		spawnEnemy(currentWave.clock % (interval * 2) == 0)
+	end
+	if currentWave.clock == interval * 9 then
+		currentWave = enemies.stageThreeWaveTwo
+		currentWave.clock = -1
 	end
 end)
 
 enemies.stageThreeWaveTwo = enemyObj(function()
 	local function spawnBullets(enemy)
+		sound.playSfx('bullet2')
 		local count = 7
 		local mod = math.pi / 15
 		local angle = getAngle(enemy, player) - math.floor(count / 2) * mod
@@ -930,8 +1039,12 @@ enemies.stageThreeWaveTwo = enemyObj(function()
 		end)
 	end
 	local interval = 90
-	local limit = interval * 6
+	local limit = interval * 7
 	if currentWave.clock % interval == 0 and currentWave.clock < limit then spawnEnemy(currentWave.clock % (interval * 2) == 0) end
+	if currentWave.clock == limit + interval then
+		currentWave = enemies.stageThreeWaveThree
+		currentWave.clock = -1
+	end
 end)
 
 enemies.stageThreeWaveThree = enemyObj(function()
@@ -993,6 +1106,13 @@ enemies.stageThreeWaveThree = enemyObj(function()
 					y = math.sin(enemy.angle) * enemy.speed
 				}
 				enemy.clock = -1
+				if opposite then
+					function enemy.suicide()
+						currentWave = enemies.stageThreeBoss
+						currentWave.clock = -goingToBossLimit
+						goingToBossClock = goingToBossLimit
+					end
+				end
 			elseif enemy.y < gameHeight / 2 then
 				if not enemy.ringAngleA then
 					enemy.ringAngleA = math.pi / 2
@@ -1000,6 +1120,7 @@ enemies.stageThreeWaveThree = enemyObj(function()
 				end
 				local interval = 18
 				if enemy.clock % interval == 0 then
+					sound.playSfx('bullet1')
 					spawnRing(enemy)
 					spawnRing(enemy, true)
 					local mod = .125
@@ -1009,115 +1130,22 @@ enemies.stageThreeWaveThree = enemyObj(function()
 				local laserInterval = 9
 				if enemy.clock % laserInterval == 0 and enemy.clock < laserInterval * 8 then
 					if not enemy.laserAngle then enemy.laserAngle = getAngle(enemy, player) end
+					if enemy.clock % (laserInterval * 2) == 0 then sound.playSfx('bullet2') end
 					spawnLaser(enemy)
 				end
 			end
 		end)
 	end
 	local interval = 180
-	if currentWave.clock == 0 then spawnEnemy() end
+	if currentWave.clock == 0 then
+		bossReady = true
+		spawnEnemy()
+	end
 	if currentWave.clock == interval then spawnEnemy(true) end
-	if currentWave.clock >= interval then prepForBoss('stageThreeBoss') end
 end)
 
 enemies.stageThreeBoss = enemyObj(function()
 	local attacks = {
-		function(enemy)
-			local function laser()
-				local speed = 3.25
-				local function spawnBullet()
-					angle = getAngle(enemy, enemy.laserTarget)
-					stage.spawnBullet('bolt', enemy.x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-						bullet.rotation = angle
-						if i == 1 then bullet.visible = false end
-					end)
-				end
-				local interval = 10
-				local limit = interval * 10
-				local max = limit * 2
-				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then
-						enemy.laserTarget = {x = player.x, y = player.y}
-					end
-					spawnBullet()
-				end
-			end
-			local function sides()
-				local function spawnBullets()
-					local angle = enemy.bulletAngle
-					local x = enemy.bulletX
-					local count = 45
-					local speed = 2
-					local diff = math.pi / 3
-					for i = 1, count do
-						if angle < enemy.bulletAngle + diff or angle >= enemy.bulletAngle + math.tau - diff then
-							stage.spawnBullet('smalllight', x, enemy.y, function(bullet)
-								bullet.velocity = {
-									x = math.cos(angle) * speed,
-									y = math.sin(angle) * speed
-								}
-							end)
-						end
-						angle = angle + math.tau / count
-					end
-				end
-				local interval = 20
-				local limit = interval * 2
-				local max = limit * 2
-				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then
-						if enemy.clock % (max * 2) < max then
-							enemy.bulletAngle = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
-							enemy.bulletX = enemy.x - bossOffset
-						else
-							enemy.bulletAngle = getAngle({x = enemy.x + bossOffset, y = enemy.y}, player)
-							enemy.bulletX = enemy.x + bossOffset
-						end
-						explosions.spawn({x = enemy.bulletX, y = enemy.y}, true, true)
-					end
-					spawnBullets()
-				end
-			end
-			laser()
-			sides()
-		end,
-		function(enemy)
-			local function spawnBullets()
-				local speed = 2.5
-				local function spawnRay(diff)
-					local baseAngle = getAngle(enemy, player)
-					local angle = baseAngle - math.pi
-					local raySpeed = speed + .175 * diff
-					for i = 1, enemy.ringCount do
-						if angle > 0 and angle < math.pi then
-							stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
-								bullet.velocity = {
-									x = math.cos(angle) * raySpeed,
-									y = math.sin(angle) * raySpeed
-								}
-								if diff == -1 then bullet.visible = false end
-							end)
-						end
-						angle = angle + math.tau / enemy.ringCount
-					end
-				end
-				for i = 1, 6 do
-					spawnRay(i - 2)
-				end
-			end
-			local interval = 40
-			local max = interval * 8
-			local limit = max - interval
-			if enemy.clock % interval == 0 and enemy.clock % max < limit then
-				if enemy.clock % max == 0 then enemy.ringCount = 25 end
-				spawnBullets()
-				enemy.ringCount = enemy.ringCount + 3
-			end
-		end,
 		function(enemy)
 			local function lasers()
 				local function spawnBullet(opposite, other)
@@ -1155,6 +1183,7 @@ enemies.stageThreeBoss = enemyObj(function()
 						if isOther then x = enemy.x - bossOffset end
 						explosions.spawn({x = x, y = enemy.y}, true, true)
 					end
+					if enemy.clock % limit == 0 then sound.playSfx('bullet2') end
 					spawnBullet(false, isOther)
 					spawnBullet(true, isOther)
 				end
@@ -1177,29 +1206,277 @@ enemies.stageThreeBoss = enemyObj(function()
 				end
 				local interval = 20
 				if enemy.clock % interval == 0 then
+					sound.playSfx('bullet1')
 					spawnBullets(enemy.x - bossOffset)
 					spawnBullets(enemy.x + bossOffset)
 				end
 			end
 			lasers()
 			spawnSecond(enemy, spray)
+		end,
+		function(enemy)
+			local function spawnBullets()
+				local speed = 2.5
+				local function spawnRay(diff)
+					local baseAngle = getAngle(enemy, player)
+					local angle = baseAngle - math.pi
+					local raySpeed = speed + .175 * diff
+					for i = 1, enemy.ringCount do
+						if angle > 0 and angle < math.pi then
+							stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
+								bullet.velocity = {
+									x = math.cos(angle) * raySpeed,
+									y = math.sin(angle) * raySpeed
+								}
+								if diff == -1 then bullet.visible = false end
+							end)
+						end
+						angle = angle + math.tau / enemy.ringCount
+					end
+				end
+				for i = 1, 6 do
+					spawnRay(i - 2)
+				end
+			end
+			local interval = 40
+			local max = interval * 8
+			local limit = max - interval
+			if enemy.clock % interval == 0 and enemy.clock % max < limit then
+				if enemy.clock % max == 0 then enemy.ringCount = 25 end
+				sound.playSfx('bullet2')
+				spawnBullets()
+				enemy.ringCount = enemy.ringCount + 3
+			end
+		end,
+		function(enemy)
+			local function spawnBullets()
+				local distance = grid * 4.5
+				local count = 6
+				local angle = math.pi * 3
+				local sCount = 13
+				local speed = 2
+				sound.playSfx('bullet1')
+				for i = 1, count do
+					if i == enemy.currentSpawn then
+						local x = enemy.x + math.cos(angle) * distance
+						local y = enemy.y + math.sin(angle) * distance
+						explosions.spawn({x = x, y = y}, true, true)
+						local sAngle = enemy.bulletAngle
+						for j = 1, sCount do
+							stage.spawnBullet('bulletlight', x, y, function(bullet)
+								bullet.velocity = {
+									x = math.cos(sAngle) * speed,
+									y = math.sin(sAngle) * speed
+								}
+								bullet.rotation = sAngle
+							end)
+							sAngle = sAngle + math.tau / sCount
+						end
+					end
+					angle = angle + math.tau / count
+				end
+				enemy.currentSpawn = enemy.currentSpawn + 1
+				if enemy.currentSpawn > count then enemy.currentSpawn = 1 end
+				enemy.bulletAngle = enemy.bulletAngle + .1
+			end
+			local interval = 10
+			if enemy.clock == 0 then
+				enemy.currentSpawn = 1
+				enemy.bulletAngle = math.pi * 3
+			end
+			if enemy.clock % interval == 0 then spawnBullets() end
+		end,
+		function(enemy)
+			local function spawnBullets(opposite)
+				local x = enemy.x - bossOffset
+				local angle = enemy.bulletAngle
+				if opposite then
+					x = enemy.x + bossOffset
+					angle = enemy.bulletAngleOther
+				end
+				local count = 6
+				local speed = 2
+				for i = 1, count do
+					stage.spawnBullet('bullet', x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+						bullet.rotation = angle
+						-- if i == 1 then bullet.visible = false end
+					end)
+					angle = angle + math.tau / count
+				end
+			end
+			local interval = 5
+			local mod = .25
+			if enemy.clock == 0 then
+				enemy.bulletAngle = math.pi
+				enemy.bulletAngleOther = math.pi
+			end
+			if enemy.clock % interval == 0 then
+				if enemy.clock % (interval * 3) == 0 then
+					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
+					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
+					sound.playSfx('bullet2')
+				end
+				if enemy.clock % (interval * 2) == 0 then
+					spawnBullets()
+					enemy.bulletAngle = enemy.bulletAngle + mod
+				else
+					spawnBullets(true)
+					enemy.bulletAngleOther = enemy.bulletAngleOther - mod
+				end
+			end
+		end,
+		function(enemy)
+			local count = 11
+			local mod = math.pi / 20
+			local speed = 2
+			local function spawnBig()
+				local angle = enemy.baseAngle + math.pi
+				for i = 1, count do
+					stage.spawnBullet('bulletlight', enemy.x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+						bullet.rotation = angle
+					end)
+					angle = angle + mod
+				end
+			end
+			local function spawnSmall()
+				local angle = enemy.baseAngle
+				for i = 1, count do
+					stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+					end)
+					angle = angle + mod
+				end
+			end
+			local interval = 20
+			if enemy.clock == 0 then
+				enemy.baseAngle = math.pi / 4
+				enemy.baseDirection = 1
+			end
+			local baseMod = .225
+			if enemy.clock % interval == 0 then
+				spawnBig()
+				spawnSmall()
+				if enemy.baseDirection == 1 then enemy.baseAngle = enemy.baseAngle - baseMod
+				else enemy.baseAngle = enemy.baseAngle + baseMod end
+				if enemy.clock % (60 * 5) == 0 then enemy.baseDirection = enemy.baseDirection * -1 end
+				if enemy.clock % (interval * 2) == 0 then sound.playSfx('bullet1')
+				else sound.playSfx('bullet2') end
+			end
 		end
 	}
 	local moves = {}
 	if currentWave.clock == 0 then
 		spawnBoss('cirno', attacks, moves, function()
 			stage.killBullets = true
-			clearedStageClock = clearedStageLimit
+			if pregameClock ~= pregameLimit then currentStage = currentStage + 1 end
+			currentWave = enemies.stageFourWaveOne
+			pregameClock = pregameLimit
+			player.bombs = player.bombs + 1
+			player.lives = player.lives + 1
 		end, function(enemy)
 			sideSideMove(enemy)
-		end)
+		end, 600)
 	end
 end)
-
 
 -- STAGE 4
 
 enemies.stageFourWaveOne = enemyObj(function()
+	local function spawnArrows(enemy)
+		local function spawnBullet(shotOffset)
+			local angle = enemy.arrowAngle
+			local offset = 18
+			local offsetAngle = angle + math.pi / 2
+			if shotOffset then offsetAngle = offsetAngle + shotOffset end
+			local x = enemy.x + math.cos(offsetAngle) * offset
+			local y = enemy.y + math.sin(offsetAngle) * offset
+			local speed = 1.5
+			stage.spawnBullet('arrow', x, y, function(bullet)
+				bullet.rotation = angle
+				bullet.velocity = {
+					x = math.cos(angle) * speed,
+					y = math.sin(angle) * speed
+				}
+			end)
+		end
+		sound.playSfx('bullet1')
+		spawnBullet()
+		spawnBullet(math.pi)
+		spawnBullet(-math.pi / 2)
+	end
+	local function spawnBurst(enemy)
+		local count = 5
+		local mod = math.pi / 10
+		local angle = enemy.burstAngle - mod * math.floor(count / 2)
+		local speed = 1.75
+		sound.playSfx('bullet2')
+		for i = 1, count do
+			stage.spawnBullet('boltlight', enemy.x, enemy.y, function(bullet)
+				bullet.velocity = {
+					x = math.cos(angle) * speed,
+					y = math.sin(angle) * speed
+				}
+				bullet.rotation = angle
+			end)
+			angle = angle + mod
+		end
+	end
+	local function spawnEnemy(opposite)
+		local x = gameWidth / 4
+		if opposite then x = x + gameWidth / 2 end
+		stage.spawnEnemy('fairyred', x, -stage.enemyImages.fairyred.idle1:getHeight() / 2, function(enemy)
+			enemy.speed = 1.5
+			enemy.health = 5
+			enemy.angle = math.pi / 2
+		end, function(enemy)
+			if enemy.speed > .35 then
+				enemy.speed = enemy.speed - .025
+				enemy.velocity = {
+					x = math.cos(enemy.angle) * enemy.speed,
+					y = math.sin(enemy.angle) * enemy.speed
+				}
+				enemy.clock = -1
+			elseif enemy.y < gameHeight / 2 then
+				if opposite then
+					local interval = 20
+					local limit = interval * 6
+					local max = limit * 2
+					if enemy.clock % interval == 0 and enemy.clock % max < limit then
+						if enemy.clock % max == 0 then enemy.arrowAngle = getAngle(enemy, player) end
+						spawnArrows(enemy)
+					end
+				else
+					local interval = 20
+					local limit = interval * 4
+					local max = limit * 2
+					if enemy.clock % interval == 0 and enemy.clock % max < limit then
+						if enemy.clock % max == 0 then enemy.burstAngle = getAngle(enemy, player) end
+						spawnBurst(enemy)
+					end
+				end
+			end
+		end)
+	end
+	local interval = 60
+	if currentWave.clock % interval == 0 and currentWave.clock < interval * 8 then spawnEnemy(currentWave.clock % (interval * 2) == 0) end
+	if currentWave.clock == interval * 10 then
+		currentWave = enemies.stageFourWaveTwo
+		currentWave.clock = -1
+	end
+end)
+
+enemies.stageFourWaveTwo = enemyObj(function()
 	local function spawnBullet(enemy)
 		local speed = 1.25
 		local mod = math.pi / 4
@@ -1290,6 +1567,7 @@ enemies.stageFourWaveOne = enemyObj(function()
 					if enemy.clock % interval == 0 and enemy.clock % max < limit then
 						if enemy.clock % max == 0 then enemy.shotAngle = getAngle(enemy, player) end
 						spawnShots(enemy)
+						sound.playSfx('bullet2')
 					end
 				elseif enemy.other then
 					local interval = 5
@@ -1300,11 +1578,18 @@ enemies.stageFourWaveOne = enemyObj(function()
 							enemy.laserAngle = getAngle(enemy, player)
 							enemy.laserPos = {x = enemy.x, y = enemy.y}
 						end
+						if enemy.clock % (interval * 4) == 0 then sound.playSfx('bullet1') end
 						spawnLasers(enemy)
 					end
 					local splashInterval = 90
-					if enemy.clock % splashInterval == splashInterval / 2 then spawnSplash(enemy) end
-				elseif enemy.clock % 4 == 0 then spawnBullet(enemy) end
+					if enemy.clock % splashInterval == splashInterval / 2 then
+						if enemy.clock % splashInterval then sound.playSfx('bullet2') end
+						spawnSplash(enemy)
+					end
+				elseif enemy.clock % 4 == 0 then
+					if enemy.clock % 12 == 0 then sound.playSfx('bullet1') end
+					spawnBullet(enemy)
+				end
 			end
 		end)
 	end
@@ -1314,85 +1599,10 @@ enemies.stageFourWaveOne = enemyObj(function()
 	elseif currentWave.clock == interval * 3 then
 		spawnEnemy(false, true)
 		spawnEnemy(false, true, true)
+	elseif currentWave.clock == interval * 6 then
+		currentWave = enemies.stageFourWaveThree
+		currentWave.clock = -1
 	end
-end)
-
-enemies.stageFourWaveTwo = enemyObj(function()
-	local function spawnArrows(enemy)
-		local function spawnBullet(shotOffset)
-			local angle = enemy.arrowAngle
-			local offset = 18
-			local offsetAngle = angle + math.pi / 2
-			if shotOffset then offsetAngle = offsetAngle + shotOffset end
-			local x = enemy.x + math.cos(offsetAngle) * offset
-			local y = enemy.y + math.sin(offsetAngle) * offset
-			local speed = 1.5
-			stage.spawnBullet('arrow', x, y, function(bullet)
-				bullet.rotation = angle
-				bullet.velocity = {
-					x = math.cos(angle) * speed,
-					y = math.sin(angle) * speed
-				}
-			end)
-		end
-		spawnBullet()
-		spawnBullet(math.pi)
-		spawnBullet(-math.pi / 2)
-	end
-	local function spawnBurst(enemy)
-		local count = 5
-		local mod = math.pi / 10
-		local angle = enemy.burstAngle - mod * math.floor(count / 2)
-		local speed = 1.75
-		for i = 1, count do
-			stage.spawnBullet('boltlight', enemy.x, enemy.y, function(bullet)
-				bullet.velocity = {
-					x = math.cos(angle) * speed,
-					y = math.sin(angle) * speed
-				}
-				bullet.rotation = angle
-			end)
-			angle = angle + mod
-		end
-	end
-	local function spawnEnemy(opposite)
-		local x = gameWidth / 4
-		if opposite then x = x + gameWidth / 2 end
-		stage.spawnEnemy('fairyred', x, -stage.enemyImages.fairyred.idle1:getHeight() / 2, function(enemy)
-			enemy.speed = 1.5
-			enemy.health = 5
-			enemy.angle = math.pi / 2
-		end, function(enemy)
-			if enemy.speed > .35 then
-				enemy.speed = enemy.speed - .025
-				enemy.velocity = {
-					x = math.cos(enemy.angle) * enemy.speed,
-					y = math.sin(enemy.angle) * enemy.speed
-				}
-				enemy.clock = -1
-			elseif enemy.y < gameHeight / 2 then
-				if opposite then
-					local interval = 20
-					local limit = interval * 6
-					local max = limit * 2
-					if enemy.clock % interval == 0 and enemy.clock % max < limit then
-						if enemy.clock % max == 0 then enemy.arrowAngle = getAngle(enemy, player) end
-						spawnArrows(enemy)
-					end
-				else
-					local interval = 20
-					local limit = interval * 4
-					local max = limit * 2
-					if enemy.clock % interval == 0 and enemy.clock % max < limit then
-						if enemy.clock % max == 0 then enemy.burstAngle = getAngle(enemy, player) end
-						spawnBurst(enemy)
-					end
-				end
-			end
-		end)
-	end
-	local interval = 60
-	if currentWave.clock % interval == 0 and currentWave.clock < interval * 8 then spawnEnemy(currentWave.clock % (interval * 2) == 0) end
 end)
 
 enemies.stageFourWaveThree = enemyObj(function()
@@ -1425,8 +1635,12 @@ enemies.stageFourWaveThree = enemyObj(function()
 	local function spawnEnemy()
 		stage.spawnEnemy('fairyred', gameWidth / 2, -stage.enemyImages.fairyred.idle1:getHeight() / 2, function(enemy)
 			enemy.speed = 1.5
-			enemy.health = 100
+			enemy.health = 45
 			enemy.angle = math.pi / 2
+			function enemy.suicide()
+				currentWave = enemies.stageFourWaveFour
+				currentWave.clock = -1
+			end
 		end, function(enemy)
 			if enemy.speed > 0 then
 				enemy.speed = enemy.speed - .02
@@ -1476,149 +1690,9 @@ enemies.stageFourWaveThree = enemyObj(function()
 	if currentWave.clock == 0 then spawnEnemy() end
 end)
 
-enemies.stageFourBoss = enemyObj(function()
-	local attacks = {
-		function(enemy)
-			local function spawnBullets()
-				local distance = grid * 4.5
-				local count = 6
-				local angle = math.pi * 3
-				local sCount = 13
-				local speed = 2
-				for i = 1, count do
-					if i == enemy.currentSpawn then
-						local x = enemy.x + math.cos(angle) * distance
-						local y = enemy.y + math.sin(angle) * distance
-						explosions.spawn({x = x, y = y}, true, true)
-						local sAngle = enemy.bulletAngle
-						for j = 1, sCount do
-							stage.spawnBullet('bulletlight', x, y, function(bullet)
-								bullet.velocity = {
-									x = math.cos(sAngle) * speed,
-									y = math.sin(sAngle) * speed
-								}
-								bullet.rotation = sAngle
-							end)
-							sAngle = sAngle + math.tau / sCount
-						end
-					end
-					angle = angle + math.tau / count
-				end
-				enemy.currentSpawn = enemy.currentSpawn + 1
-				if enemy.currentSpawn > count then enemy.currentSpawn = 1 end
-				enemy.bulletAngle = enemy.bulletAngle + .1
-			end
-			local interval = 10
-			if enemy.clock == 0 then
-				enemy.currentSpawn = 1
-				enemy.bulletAngle = math.pi * 3
-			end
-			if enemy.clock % interval == 0 then spawnBullets() end
-		end,
-		function(enemy)
-			local function spawnBullets(opposite)
-				local x = enemy.x - bossOffset
-				local angle = enemy.bulletAngle
-				if opposite then
-					x = enemy.x + bossOffset
-					angle = enemy.bulletAngleOther
-				end
-				local count = 6
-				local speed = 2
-				for i = 1, count do
-					stage.spawnBullet('bullet', x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-						bullet.rotation = angle
-						-- if i == 1 then bullet.visible = false end
-					end)
-					angle = angle + math.tau / count
-				end
-			end
-			local interval = 5
-			local mod = .25
-			if enemy.clock == 0 then
-				enemy.bulletAngle = math.pi
-				enemy.bulletAngleOther = math.pi
-			end
-			if enemy.clock % interval == 0 then
-				if enemy.clock % (interval * 3) == 0 then
-					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
-					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
-				end
-				if enemy.clock % (interval * 2) == 0 then
-					spawnBullets()
-					enemy.bulletAngle = enemy.bulletAngle + mod
-				else
-					spawnBullets(true)
-					enemy.bulletAngleOther = enemy.bulletAngleOther - mod
-				end
-			end
-		end,
-		function(enemy)
-			local count = 11
-			local mod = math.pi / 20
-			local speed = 2.5
-			local function spawnBig()
-				local angle = enemy.baseAngle + math.pi
-				for i = 1, count do
-					stage.spawnBullet('bulletlight', enemy.x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-						bullet.rotation = angle
-					end)
-					angle = angle + mod
-				end
-			end
-			local function spawnSmall()
-				local angle = enemy.baseAngle
-				for i = 1, count do
-					stage.spawnBullet('small', enemy.x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-					end)
-					angle = angle + mod
-				end
-			end
-			local interval = 17
-			if enemy.clock == 0 then
-				enemy.baseAngle = math.pi / 4
-				enemy.baseDirection = 1
-			end
-			local baseMod = .225
-			if enemy.clock % interval == 0 then
-				spawnBig()
-				spawnSmall()
-				if enemy.baseDirection == 1 then
-					enemy.baseAngle = enemy.baseAngle - baseMod
-				else
-					enemy.baseAngle = enemy.baseAngle + baseMod
-				end
-				if enemy.clock % (60 * 5) == 0 then enemy.baseDirection = enemy.baseDirection * -1 end
-			end
-		end
-	}
-	local moves = {}
-	if currentWave.clock == 0 then
-		spawnBoss('cirno', attacks, moves, function()
-			stage.killBullets = true
-			clearedStageClock = clearedStageLimit
-		end, function(enemy)
-			sideSideMove(enemy)
-		end)
-	end
-end)
-
-
--- STAGE 5
-enemies.stageFiveWaveOne = enemyObj(function()
+enemies.stageFourWaveFour = enemyObj(function()
 	local function spawnRing(enemy)
+		sound.playSfx('bullet2')
 		local angle = enemy.bulletAngle
 		local count = 25
 		local speed = 1
@@ -1689,7 +1763,7 @@ enemies.stageFiveWaveOne = enemyObj(function()
 			end
 		end)
 	end
-	local function spawnSmall(opposite)
+	local function spawnSmall(opposite, last)
 		local x = currentWave.enemyX
 		local y = -stage.enemyImages.fairyred.idle1:getHeight() / 2
 		local speed = .5
@@ -1703,22 +1777,35 @@ enemies.stageFiveWaveOne = enemyObj(function()
 				y = math.sin(angle) * speed
 			}
 			if opposite then enemy.opposite = true end
-		end, function(enemy)
-			if enemy.opposite then
-				local interval = 10
-				local limit = interval * 5
-				local max = limit * 3
-				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then enemy.bulletAngle = getAngle(enemy, player) end
-					spawnLasers(enemy)
+			if last then
+				function enemy.suicide()
+					currentWave = enemies.stageFourBoss
+					currentWave.clock = -goingToBossLimit
+					goingToBossClock = goingToBossLimit
 				end
-			else
-				local interval = 5
-				local limit = interval * 10
-				local max = limit * 2
-				if enemy.clock % interval == 0 and enemy.clock % max >= limit and enemy.clock < max * 3 then
-					if enemy.clock % max == limit then enemy.turdAngle = getAngle(enemy, player) end
-					spawnTurd(enemy)
+			end
+		end, function(enemy)
+			if enemy.y < gameHeight / 3 then
+				if enemy.opposite then
+					local interval = 10
+					local limit = interval * 5
+					local max = limit * 3
+					if enemy.clock % interval == 0 and enemy.clock % max < limit then
+						if enemy.clock % max == 0 then enemy.bulletAngle = getAngle(enemy, player) end
+						if enemy.clock % (interval * 3) == 0 then sound.playSfx('bullet2') end
+						spawnLasers(enemy)
+					end
+				else
+					local interval = 5
+					local limit = interval * 10
+					local max = limit * 2
+					if enemy.clock % interval == 0 and enemy.clock % max >= limit and enemy.clock < max * 3 then
+						if enemy.clock % max == limit then
+							enemy.turdAngle = getAngle(enemy, player)
+						end
+						spawnTurd(enemy)
+						if enemy.clock % (interval * 4) == 0 then sound.playSfx('bullet1') end
+					end
 				end
 			end
 		end)
@@ -1733,88 +1820,226 @@ enemies.stageFiveWaveOne = enemyObj(function()
 	end
 	local interval = 90
 	if currentWave.clock % interval == interval / 3 and currentWave.clock % secondStart < interval * 4 and currentWave.clock < secondStart + interval * 4 then
-		spawnSmall(currentWave.clock >= secondStart)
+		spawnSmall(currentWave.clock >= secondStart, currentWave.clock >= 600)
 		local mod = grid
 		if currentWave.clock >= secondStart then mod = mod * -1 end
 		currentWave.enemyX = currentWave.enemyX + mod
 	end
+	if currentWave.clock >= secondStart + interval * 7 then
+		currentWave = enemies.stageThreeBoss
+		currentWave.clock = -goingToBossLimit
+		goingToBossClock = goingToBossLimit
+	end
 end)
 
-enemies.stageFiveWaveTwo = enemyObj(function()
-
-end)
-
-enemies.stageFiveWaveThree = enemyObj(function()
-
-end)
-
-enemies.stageFiveBoss = enemyObj(function()
+enemies.stageFourBoss = enemyObj(function()
 	local attacks = {
 		function(enemy)
-			local function burst()
-				local function spawnBullet()
-					stage.spawnBullet('smalllight', enemy.x, enemy.y, function(bullet)
-						bullet.speed = 4
-						bullet.angle = math.pi * math.random()
-					end, function(bullet)
-						if bullet.speed > .75 then
+			local function ring()
+				local function spawnBullets(other, opposite)
+					local count = 30
+					local angle = 0
+					local speedX = 1.5
+					local speedY = speedX
+					local x = enemy.x - bossOffset
+					if opposite then x = enemy.x + bossOffset end
+					if other then speedX = speedX * .75
+					else speedY = speedY * .75 end
+					for i = 1, count do
+						stage.spawnBullet('small', x, enemy.y, function(bullet)
 							bullet.velocity = {
-								x = math.cos(bullet.angle) * (bullet.speed * .75),
-								y = math.sin(bullet.angle) * bullet.speed
+								x = math.cos(angle) * speedX,
+								y = math.sin(angle) * speedY
 							}
-							bullet.speed = bullet.speed - .05
-						end
-					end)
+						end)
+						angle = angle + math.tau / count
+					end
 				end
-				local limit = 5
-				local max = limit * 3
-				if enemy.clock % max < limit then
-					spawnBullet()
-					spawnBullet()
+				local interval = 60
+				if enemy.clock % interval == 0 then
+					sound.playSfx('bullet2')
+					spawnBullets(enemy.clock % (interval * 2) < interval)
+					spawnBullets(enemy.clock % (interval * 2) >= interval, true)
 				end
 			end
-			local function lasers()
-				local function spawnBullets(opposite)
-					local target = {x = gameWidth, y = gameHeight}
+			local function laser()
+				local function spawnBullet(mod, opposite)
+					local speed = 1.5 + .175 * mod
 					local x = enemy.x - bossOffset
+					local angle = enemy.bulletAngleA
 					if opposite then
 						x = enemy.x + bossOffset
-						target.x = 0
+						angle = enemy.bulletAngleB
 					end
-					local angle = getAngle({x = x, y = enemy.y}, target)
-					local count = 7
-					local mod = math.pi / 10
-					angle = angle - mod * math.floor(count / 2)
-					local speed = 2.25
+					explosions.spawn({x = x, y = enemy.y}, true, true)
+					stage.spawnBullet('biglight', x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+					end)
+				end
+				local interval = 10
+				local limit = interval * 4
+				local max = limit * 1.5
+				if enemy.clock % interval == 0 and enemy.clock % max < limit then
+					if enemy.clock % max == 0 then
+						enemy.bulletAngleA = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
+						enemy.bulletAngleB = getAngle({x = enemy.x + bossOffset, y = enemy.y}, player)
+					end
+					local diffMod = enemy.clock % max / 10
+					if enemy.clock % (max * 4) >= max * 2 then diffMod = (enemy.clock % max - 5) / 10 end
+					sound.playSfx('bullet1')
+					spawnBullet(diffMod, enemy.clock % (max * 2) < max)
+				end
+			end
+			ring()
+			laser()
+		end,
+		function(enemy)
+			local function ring()
+				local count = 25
+				local function spawnBullets(opposite)
+					local angle = enemy.ringAngle
+					if opposite then angle = angle + math.pi / count end
+					local speed = 1
+					sound.playSfx('bullet1')
 					for i = 1, count do
-						stage.spawnBullet('bullet', x, enemy.y, function(bullet)
+						stage.spawnBullet('biglight', enemy.x, enemy.y, function(bullet)
 							bullet.velocity = {
 								x = math.cos(angle) * speed,
 								y = math.sin(angle) * speed
 							}
-							bullet.rotation = angle
 						end)
-						angle = angle + mod
+						angle = angle + math.tau / count
 					end
 				end
-				local interval = 8
-				local limit = interval * 5
+				local interval = 50
+				if enemy.clock == 0 then enemy.ringAngle = -math.pi / 2 end
+				if enemy.clock % interval == 0 then spawnBullets(enemy.clock % (interval * 2) == 0) end
+				enemy.ringAngle = math.pi / (count * 4)
+			end
+			local function balls()
+				local function ball(opposite)
+					local count = 20
+					local angle = math.random() * math.tau
+					local offset = grid * 3.25
+					local x = enemy.x - bossOffset
+					if opposite then x = enemy.x + bossOffset end
+					sound.playSfx('bullet2')
+					for i = 1, count do
+						stage.spawnBullet('bolt', x + math.cos(angle) * offset, enemy.y + math.sin(angle) * offset, function(bullet)
+							bullet.axisAngle = angle
+							bullet.speed = 2
+							bullet.rotation = angle
+						end, function(bullet)
+							if not bullet.flipped then
+								bullet.velocity = {
+									x = math.cos(math.pi) * bullet.speed,
+									y = math.sin(bullet.axisAngle)
+								}
+								bullet.axisAngle = bullet.axisAngle + 0.075
+								bullet.speed = bullet.speed - .05
+								if bullet.speed <= .5 then
+									bullet.flipped = true
+									local x, y = bullet:center()
+									local angle = getAngle({x = x, y = y}, player)
+									local speed = 2.75
+									bullet.velocity = {
+										x = math.cos(angle) * speed,
+										y = math.sin(angle) * speed
+									}
+									bullet.rotation = angle
+								end
+							end
+						end)
+						angle = angle + math.tau / count
+					end
+					explosions.spawn({x = x, y = enemy.y}, true, true)
+				end
+				local interval = 75
+				if enemy.clock % interval == 0 and enemy.clock >= interval then ball(enemy.clock % (interval * 2) == interval) end
+			end
+			ring()
+			balls()
+		end,
+		function(enemy)
+			local function arrows()
+				local function spawnBullets()
+					local angle = enemy.bulletAngle
+					local speed = 2
+					sound.playSfx('bullet1')
+					stage.spawnBullet('boltlight', enemy.x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+						bullet.rotation = angle
+					end)
+				end
+				local interval = 7
+				local limit = interval * 20
 				local max = limit * 2
 				if enemy.clock % interval == 0 and enemy.clock % max < limit then
 					if enemy.clock % max == 0 then
-						local x = enemy.x + bossOffset
-						if enemy.clock % (max * 2) == 0 then x = enemy.x - bossOffset end
-						explosions.spawn({x = x, y = enemy.y}, true, true)
+						local mod = .75
+						enemy.bulletAngle = getAngle(enemy, player)
+						enemy.bulletAngleMin = enemy.bulletAngle - mod
+						enemy.bulletAngleMax = enemy.bulletAngle + mod
+						enemy.bulletDirection = true
 					end
-					spawnBullets(enemy.clock % (max * 2) >= limit)
+					if enemy.bulletAngle then spawnBullets() end
+					local diff = 0.15
+					if enemy.bulletAngle and enemy.bulletAngleMin and enemy.bulletAngleMax then
+						if enemy.bulletDirection then diff = diff * -1 end
+						if enemy.bulletDirection and enemy.bulletAngle <= enemy.bulletAngleMin then enemy.bulletDirection = false
+						elseif enemy.bulletAngle >= enemy.bulletAngleMax then enemy.bulletDirection = true end
+						enemy.bulletAngle = enemy.bulletAngle + diff
+					end
 				end
 			end
-			burst()
-			lasers()
+			local function ring()
+				local function spawnBullets(opposite)
+					sound.playSfx('bullet2')
+					local count = 25
+					local angle = enemy.ringAngle
+					local x = enemy.x - bossOffset
+					if opposite then x = enemy.x + bossOffset end
+					for i = 1, count do
+						stage.spawnBullet('big', x, enemy.y, function(bullet)
+							bullet.speed = 3
+							bullet.angle = angle
+						end, function(bullet)
+							if bullet.speed > 1 then
+								bullet.velocity = {
+									x = math.cos(bullet.angle) * bullet.speed,
+									y = math.sin(bullet.angle) * bullet.speed
+								}
+								bullet.speed = bullet.speed - .05
+							end
+						end)
+						angle = angle + math.tau / count
+					end
+					local mod = 0.05
+					if opposite then mod = mod * -1 end
+					enemy.ringAngle = enemy.ringAngle + mod
+				end
+				local interval = 75
+				if enemy.clock == 0 then enemy.ringAngle = 0 end
+				if enemy.clock % interval == 0 and enemy.ringAngle then
+					spawnBullets()
+					spawnBullets(true)
+					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
+					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
+				end
+			end
+			arrows()
+			ring()
 		end,
 		function(enemy)
 			local function blast()
 				local function spawnBullets()
+					sound.playSfx('bullet2')
 					local count = 160
 					local speed = 3
 					local angle = getAngle(enemy, player)
@@ -1879,369 +2104,13 @@ enemies.stageFiveBoss = enemyObj(function()
 						explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
 						explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
 					end
+					if enemy.clock % (interval * 2) == 0 then sound.playSfx('bullet1') end
 					spawnBullets(false, enemy.clock % max == 0)
 					spawnBullets(true, enemy.clock % max == 0)
 				end
 			end
 			blast()
 			lasers()
-		end,
-		function(enemy)
-			local function sideRays()
-				local function spawnBullet(x)
-					local speed = 5
-					stage.spawnBullet('boltlight', x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(enemy.sideAngle) * speed,
-							y = math.sin(enemy.sideAngle) * speed
-						}
-						bullet.rotation = enemy.sideAngle
-					end)
-				end
-				local interval = 6
-				if enemy.clock % 20 == 0 then
-					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
-					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
-				end
-				if enemy.clock % interval == 0 then
-					enemy.sideAngle = getAngle(enemy, player)
-					spawnBullet(enemy.x - bossOffset)
-					spawnBullet(enemy.x + bossOffset)
-				end
-			end
-			local function ring()
-				local function spawnBullets(opposite)
-					local mod = math.pi / 15
-					local count = 5
-					local angle = getAngle(enemy, player) - mod * math.floor(count / 2)
-					if opposite then angle = angle + mod / 5 * 3
-					else angle = angle - mod / 5 * 3 end
-					local speed = 1.75
-					for i = 1, count do
-						stage.spawnBullet('big', enemy.x, enemy.y, function(bullet)
-							bullet.velocity = {
-								x = math.cos(angle) * speed,
-								y = math.sin(angle) * speed
-							}
-						end)
-						angle = angle + mod
-					end
-				end
-				local interval = 60
-				if enemy.clock % interval == 0 then spawnBullets(enemy.clock % (interval * 2) == 0) end
-			end
-			local function centerRay()
-				local function spawnBullet()
-					local mod = 0.05
-					local angle = getAngle(enemy, player) - mod
-					angle = angle + mod * 2 * math.random()
-					local speed = 1.25
-					stage.spawnBullet('smalllight', enemy.x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-					end)
-				end
-				local interval = 30
-				if enemy.clock % interval == 0 then spawnBullet() end
-			end
-			sideRays()
-			ring()
-			centerRay()
-		end
-	}
-	local moves = {}
-	if currentWave.clock == 0 then
-		spawnBoss('cirno', attacks, moves, function()
-			stage.killBullets = true
-			clearedStageClock = clearedStageLimit
-		end, function(enemy)
-			sideSideMove(enemy)
-		end)
-	end
-end)
-
--- STAGE 6
-enemies.stageSixWaveOne = enemyObj(function()
-
-end)
-
-enemies.stageSixWaveTwo = enemyObj(function()
-
-end)
-
-enemies.stageSixWaveThree = enemyObj(function()
-
-end)
-
-enemies.stageSixBoss = enemyObj(function()
-	local attacks = {
-		function(enemy)
-			local function spray()
-				local function spawnBullets()
-					local angle = enemy.bulletAngle
-					local count = 25
-					for i = 1, count do
-						stage.spawnBullet('bullet', enemy.bulletPos.x, enemy.bulletPos.y, function(bullet)
-							bullet.angle = angle
-							bullet.speed = 1.5
-							if enemy.bulletDir == 1 then bullet.opposite = true end
-						end, function(bullet)
-							if bullet.clock < 60 then
-								bullet.velocity = {
-									x = math.cos(bullet.angle) * bullet.speed,
-									y = math.sin(bullet.angle) * bullet.speed
-								}
-								bullet.rotation = bullet.angle
-								local mod = 0.075
-								if bullet.opposite then mod = mod * -1 end
-								bullet.angle = bullet.angle + mod
-							end
-						end)
-						angle = angle + math.tau / count
-					end
-					local mod = 0.1
-					if enemy.bulletDir == 1 then mod = mod * -1 end
-					enemy.bulletAngle = enemy.bulletAngle - mod
-				end
-				local interval = 30
-				local max = interval * 10
-				if enemy.clock == 0 then
-					enemy.bulletAngle = 0
-					enemy.bulletDir = -1
-				end
-				if enemy.clock % max == 0 then
-					enemy.bulletPos = {x = enemy.x, y = enemy.y}
-					enemy.bulletDir = enemy.bulletDir * -1
-				end
-				if enemy.clock % interval == 0 then spawnBullets() end
-			end
-			local function jolt()
-				local function spawnBullets(opposite)
-					local count = 100
-					local angle = 0
-					if opposite then angle = angle + math.pi / 2 end
-					explosions.spawn({x = enemy.bulletPos.x, y = enemy.bulletPos.y}, true, true)
-					for i = 1, count do
-						if i % (count / 6) < 5 then
-							stage.spawnBullet('biglight', enemy.bulletPos.x, enemy.bulletPos.y, function(bullet)
-								bullet.angle = angle
-								bullet.speed = 2
-							end, function(bullet)
-								if bullet.clock < 120 then
-									bullet.velocity = {
-										x = math.cos(bullet.angle) * bullet.speed,
-										y = math.sin(bullet.angle) * bullet.speed
-									}
-									bullet.speed = bullet.speed - .025
-								end
-							end)
-						end
-						angle = angle + math.tau / count
-					end
-				end
-				local interval = 60
-				if enemy.clock % interval == 0 then spawnBullets(enemy.clock % (interval * 2) == 0) end
-			end
-			spray()
-			jolt()
-		end,
-		function(enemy)
-			local function ring()
-				local function spawnBullets(other, opposite)
-					local count = 30
-					local angle = 0
-					local speedX = 1.5
-					local speedY = speedX
-					local x = enemy.x - bossOffset
-					if opposite then x = enemy.x + bossOffset end
-					if other then speedX = speedX * .75
-					else speedY = speedY * .75 end
-					for i = 1, count do
-						stage.spawnBullet('small', x, enemy.y, function(bullet)
-							bullet.velocity = {
-								x = math.cos(angle) * speedX,
-								y = math.sin(angle) * speedY
-							}
-						end)
-						angle = angle + math.tau / count
-					end
-				end
-				local interval = 60
-				if enemy.clock % interval == 0 then
-					spawnBullets(enemy.clock % (interval * 2) < interval)
-					spawnBullets(enemy.clock % (interval * 2) >= interval, true)
-				end
-			end
-			local function laser()
-				local function spawnBullet(mod, opposite)
-					local speed = 1.5 + .175 * mod
-					local x = enemy.x - bossOffset
-					local angle = enemy.bulletAngleA
-					if opposite then
-						x = enemy.x + bossOffset
-						angle = enemy.bulletAngleB
-					end
-					explosions.spawn({x = x, y = enemy.y}, true, true)
-					stage.spawnBullet('biglight', x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-					end)
-				end
-				local interval = 10
-				local limit = interval * 4
-				local max = limit * 1.5
-				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then
-						enemy.bulletAngleA = getAngle({x = enemy.x - bossOffset, y = enemy.y}, player)
-						enemy.bulletAngleB = getAngle({x = enemy.x + bossOffset, y = enemy.y}, player)
-					end
-					local diffMod = enemy.clock % max / 10
-					if enemy.clock % (max * 4) >= max * 2 then diffMod = (enemy.clock % max - 5) / 10 end
-					spawnBullet(diffMod, enemy.clock % (max * 2) < max)
-				end
-			end
-			ring()
-			laser()
-		end,
-		function(enemy)
-			local function ring()
-				local count = 25
-				local function spawnBullets(opposite)
-					local angle = enemy.ringAngle
-					if opposite then angle = angle + math.pi / count end
-					local speed = 1
-					for i = 1, count do
-						stage.spawnBullet('biglight', enemy.x, enemy.y, function(bullet)
-							bullet.velocity = {
-								x = math.cos(angle) * speed,
-								y = math.sin(angle) * speed
-							}
-						end)
-						angle = angle + math.tau / count
-					end
-				end
-				local interval = 50
-				if enemy.clock == 0 then enemy.ringAngle = -math.pi / 2 end
-				if enemy.clock % interval == 0 then spawnBullets(enemy.clock % (interval * 2) == 0) end
-				enemy.ringAngle = math.pi / (count * 4)
-			end
-			local function balls()
-				local function ball(opposite)
-					local count = 20
-					local angle = math.random() * math.tau
-					local offset = grid * 3.25
-					local x = enemy.x - bossOffset
-					if opposite then x = enemy.x + bossOffset end
-					for i = 1, count do
-						stage.spawnBullet('bolt', x + math.cos(angle) * offset, enemy.y + math.sin(angle) * offset, function(bullet)
-							bullet.axisAngle = angle
-							bullet.speed = 2
-							bullet.rotation = angle
-						end, function(bullet)
-							if not bullet.flipped then
-								bullet.velocity = {
-									x = math.cos(math.pi) * bullet.speed,
-									y = math.sin(bullet.axisAngle)
-								}
-								bullet.axisAngle = bullet.axisAngle + 0.075
-								bullet.speed = bullet.speed - .05
-								if bullet.speed <= .5 then
-									bullet.flipped = true
-									local x, y = bullet:center()
-									local angle = getAngle({x = x, y = y}, player)
-									local speed = 3
-									bullet.velocity = {
-										x = math.cos(angle) * speed,
-										y = math.sin(angle) * speed
-									}
-									bullet.rotation = angle
-								end
-							end
-						end)
-						angle = angle + math.tau / count
-					end
-					explosions.spawn({x = x, y = enemy.y}, true, true)
-				end
-				local interval = 75
-				if enemy.clock % interval == 0 and enemy.clock >= interval then ball(enemy.clock % (interval * 2) == interval) end
-			end
-			ring()
-			balls()
-		end,
-		function(enemy)
-			local function arrows()
-				local function spawnBullets()
-					local angle = enemy.bulletAngle
-					local speed = 2
-					stage.spawnBullet('boltlight', enemy.x, enemy.y, function(bullet)
-						bullet.velocity = {
-							x = math.cos(angle) * speed,
-							y = math.sin(angle) * speed
-						}
-						bullet.rotation = angle
-					end)
-				end
-				local interval = 7
-				local limit = interval * 20
-				local max = limit * 2
-				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then
-						local mod = .75
-						enemy.bulletAngle = getAngle(enemy, player)
-						enemy.bulletAngleMin = enemy.bulletAngle - mod
-						enemy.bulletAngleMax = enemy.bulletAngle + mod
-						enemy.bulletDirection = true
-					end
-					if enemy.bulletAngle then spawnBullets() end
-					local diff = 0.15
-					if enemy.bulletAngle and enemy.bulletAngleMin and enemy.bulletAngleMax then
-						if enemy.bulletDirection then diff = diff * -1 end
-						if enemy.bulletDirection and enemy.bulletAngle <= enemy.bulletAngleMin then enemy.bulletDirection = false
-						elseif enemy.bulletAngle >= enemy.bulletAngleMax then enemy.bulletDirection = true end
-						enemy.bulletAngle = enemy.bulletAngle + diff
-					end
-				end
-			end
-			local function ring()
-				local function spawnBullets(opposite)
-					local count = 25
-					local angle = enemy.ringAngle
-					local x = enemy.x - bossOffset
-					if opposite then x = enemy.x + bossOffset end
-					for i = 1, count do
-						stage.spawnBullet('big', x, enemy.y, function(bullet)
-							bullet.speed = 3
-							bullet.angle = angle
-						end, function(bullet)
-							if bullet.speed > 1 then
-								bullet.velocity = {
-									x = math.cos(bullet.angle) * bullet.speed,
-									y = math.sin(bullet.angle) * bullet.speed
-								}
-								bullet.speed = bullet.speed - .05
-							end
-						end)
-						angle = angle + math.tau / count
-					end
-					local mod = 0.05
-					if opposite then mod = mod * -1 end
-					enemy.ringAngle = enemy.ringAngle + mod
-				end
-				local interval = 75
-				if enemy.clock == 0 then enemy.ringAngle = 0 end
-				if enemy.clock % interval == 0 and enemy.ringAngle then
-					spawnBullets()
-					spawnBullets(true)
-					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
-					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
-				end
-			end
-			arrows()
-			ring()
 		end,
 		function(enemy)
 			local function center()
@@ -2278,7 +2147,10 @@ enemies.stageSixBoss = enemyObj(function()
 				local mod = math.pi / 7
 				if enemy.clock == 0 then enemy.bulletAngle = math.pi - mod end
 				if enemy.clock % interval == 0 and enemy.clock % max < limit then
-					if enemy.clock % max == 0 then enemy.bulletAngle = enemy.bulletAngle + mod end
+					if enemy.clock % max == 0 then
+						enemy.bulletAngle = enemy.bulletAngle + mod
+						sound.playSfx('bullet2')
+					end
 					spawnBullets()
 				end
 			end
@@ -2326,20 +2198,225 @@ enemies.stageSixBoss = enemyObj(function()
 					enemy.bulletCount = enemy.bulletCount + mod
 					spawnBullets(-1)
 					spawnBullets(1)
+					sound.playSfx('bullet1')
 				end
 			end
 			center()
 			sides()
+		end,
+		function(enemy)
+			local function sideRays()
+				local function spawnBullet(x)
+					local speed = 5
+					stage.spawnBullet('boltlight', x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(enemy.sideAngle) * speed,
+							y = math.sin(enemy.sideAngle) * speed
+						}
+						bullet.rotation = enemy.sideAngle
+					end)
+				end
+				local interval = 6
+				if enemy.clock % 20 == 0 then
+					explosions.spawn({x = enemy.x - bossOffset, y = enemy.y}, true, true)
+					explosions.spawn({x = enemy.x + bossOffset, y = enemy.y}, true, true)
+				end
+				if enemy.clock % interval == 0 then
+					enemy.sideAngle = getAngle(enemy, player)
+					spawnBullet(enemy.x - bossOffset)
+					spawnBullet(enemy.x + bossOffset)
+				end
+			end
+			local function ring()
+				local function spawnBullets(opposite)
+					local mod = math.pi / 15
+					local count = 5
+					local angle = getAngle(enemy, player) - mod * math.floor(count / 2)
+					if opposite then angle = angle + mod / 5 * 3
+					else angle = angle - mod / 5 * 3 end
+					local speed = 1.75
+					for i = 1, count do
+						stage.spawnBullet('big', enemy.x, enemy.y, function(bullet)
+							bullet.velocity = {
+								x = math.cos(angle) * speed,
+								y = math.sin(angle) * speed
+							}
+						end)
+						angle = angle + mod
+					end
+				end
+				local interval = 60
+				if enemy.clock % interval == 0 then
+					sound.playSfx('bullet2')
+					spawnBullets(enemy.clock % (interval * 2) == 0)
+				end
+			end
+			local function centerRay()
+				local function spawnBullet()
+					sound.playSfx('bullet1')
+					local mod = 0.05
+					local angle = getAngle(enemy, player) - mod
+					angle = angle + mod * 2 * math.random()
+					local speed = 1.25
+					stage.spawnBullet('smalllight', enemy.x, enemy.y, function(bullet)
+						bullet.velocity = {
+							x = math.cos(angle) * speed,
+							y = math.sin(angle) * speed
+						}
+					end)
+				end
+				local interval = 30
+				if enemy.clock % interval == 0 then spawnBullet() end
+			end
+			sideRays()
+			ring()
+			centerRay()
+		end,
+		function(enemy)
+			local function spray()
+				local function spawnBullets()
+					local angle = enemy.bulletAngle
+					local count = 25
+					sound.playSfx('bullet1')
+					for i = 1, count do
+						stage.spawnBullet('bullet', enemy.bulletPos.x, enemy.bulletPos.y, function(bullet)
+							bullet.angle = angle
+							bullet.speed = 1.5
+							if enemy.bulletDir == 1 then bullet.opposite = true end
+						end, function(bullet)
+							if bullet.clock < 60 then
+								bullet.velocity = {
+									x = math.cos(bullet.angle) * bullet.speed,
+									y = math.sin(bullet.angle) * bullet.speed
+								}
+								bullet.rotation = bullet.angle
+								local mod = 0.075
+								if bullet.opposite then mod = mod * -1 end
+								bullet.angle = bullet.angle + mod
+							end
+						end)
+						angle = angle + math.tau / count
+					end
+					local mod = 0.1
+					if enemy.bulletDir == 1 then mod = mod * -1 end
+					enemy.bulletAngle = enemy.bulletAngle - mod
+				end
+				local interval = 30
+				local max = interval * 10
+				if enemy.clock == 0 then
+					enemy.bulletAngle = 0
+					enemy.bulletDir = -1
+				end
+				if enemy.clock % max == 0 then
+					enemy.bulletPos = {x = enemy.x, y = enemy.y}
+					enemy.bulletDir = enemy.bulletDir * -1
+				end
+				if enemy.clock % interval == 0 then spawnBullets() end
+			end
+			local function jolt()
+				local function spawnBullets(opposite)
+					sound.playSfx('bullet2')
+					local count = 100
+					local angle = 0
+					if opposite then angle = angle + math.pi / 2 end
+					explosions.spawn({x = enemy.bulletPos.x, y = enemy.bulletPos.y}, true, true)
+					for i = 1, count do
+						if i % (count / 6) < 5 then
+							stage.spawnBullet('biglight', enemy.bulletPos.x, enemy.bulletPos.y, function(bullet)
+								bullet.angle = angle
+								bullet.speed = 2
+							end, function(bullet)
+								if bullet.clock < 120 then
+									bullet.velocity = {
+										x = math.cos(bullet.angle) * bullet.speed,
+										y = math.sin(bullet.angle) * bullet.speed
+									}
+									bullet.speed = bullet.speed - .025
+								end
+							end)
+						end
+						angle = angle + math.tau / count
+					end
+				end
+				local interval = 60
+				if enemy.clock % interval == 0 then spawnBullets(enemy.clock % (interval * 2) == 0) end
+			end
+			spray()
+			jolt()
+		end,
+		function(enemy)
+			local function burst()
+				local function spawnBullet()
+					stage.spawnBullet('smalllight', enemy.x, enemy.y, function(bullet)
+						bullet.speed = 4
+						bullet.angle = math.pi * math.random()
+					end, function(bullet)
+						if bullet.speed > .75 then
+							bullet.velocity = {
+								x = math.cos(bullet.angle) * (bullet.speed * .75),
+								y = math.sin(bullet.angle) * bullet.speed
+							}
+							bullet.speed = bullet.speed - .05
+						end
+					end)
+				end
+				local limit = 5
+				local max = limit * 3
+				if enemy.clock % max < limit then
+					if enemy.clock % 10 == 0 then sound.playSfx('bullet2') end
+					spawnBullet()
+					spawnBullet()
+				end
+			end
+			local function lasers()
+				local function spawnBullets(opposite)
+					local target = {x = gameWidth, y = gameHeight}
+					local x = enemy.x - bossOffset
+					if opposite then
+						x = enemy.x + bossOffset
+						target.x = 0
+					end
+					local angle = getAngle({x = x, y = enemy.y}, target)
+					local count = 7
+					local mod = math.pi / 10
+					angle = angle - mod * math.floor(count / 2)
+					local speed = 2.25
+					for i = 1, count do
+						stage.spawnBullet('bullet', x, enemy.y, function(bullet)
+							bullet.velocity = {
+								x = math.cos(angle) * speed,
+								y = math.sin(angle) * speed
+							}
+							bullet.rotation = angle
+						end)
+						angle = angle + mod
+					end
+				end
+				local interval = 8
+				local limit = interval * 5
+				local max = limit * 2
+				if enemy.clock % interval == 0 and enemy.clock % max < limit then
+					if enemy.clock % max == 0 then
+						local x = enemy.x + bossOffset
+						if enemy.clock % (max * 2) == 0 then x = enemy.x - bossOffset end
+						explosions.spawn({x = x, y = enemy.y}, true, true)
+					end
+					sound.playSfx('bullet1')
+					spawnBullets(enemy.clock % (max * 2) >= limit)
+				end
+			end
+			burst()
+			lasers()
 		end
 	}
 	local moves = {}
 	if currentWave.clock == 0 then
+		if currentWave.clock == 0 then sound.playBgm('boss2') end
 		spawnBoss('cirno', attacks, moves, function()
 			stage.killBullets = true
-			gameOver = true
-			wonGame = true
+			strResult = '1CC!'
 		end, function(enemy)
 			sideSideMove(enemy)
-		end)
+		end, 1150)
 	end
 end)

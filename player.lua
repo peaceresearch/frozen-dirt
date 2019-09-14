@@ -13,7 +13,6 @@ player = {
 		left2 = love.graphics.newImage('img/player/left2.png'),
 		right1 = love.graphics.newImage('img/player/right1.png'),
 		right2 = love.graphics.newImage('img/player/right2.png'),
-		side = love.graphics.newImage('img/player/side.png'),
 		bullet = love.graphics.newImage('img/player/bullet.png'),
 		wing1 = love.graphics.newImage('img/player/wing1.png'),
 		wing2 = love.graphics.newImage('img/player/wing2.png'),
@@ -34,11 +33,8 @@ player = {
 	bombLimit = 200,
 	bombItems = {},
 	bombAngle = 0,
-	sideOffset = grid * 1.75,
-	sideY = 0,
 	borderRotationA = 0,
 	borderRotationB = 0,
-	sideRotation = 0,
 	leftClock = 0,
 	rightClock = 0,
 	power = 0
@@ -104,7 +100,7 @@ local function updateMove()
 end
 
 local function spawnBullet(diff, hidden)
-	local mod = math.pi / 15
+	local mod = math.pi / 13
 	local size = 22
 	local y = player.y
 	local x = player.x
@@ -124,9 +120,11 @@ local function spawnBullet(diff, hidden)
 	if hidden then bullet.hidden = true end
 	if controls.focus then bullet.timeSet = 2 end
 	table.insert(player.bullets, bullet)
+	sound.playSfx('playerbullet')
 end
 
 local function spawnBomb(opposite)
+	sound.playSfx('bomb')
 	local angle = player.bombAngle
 	local count = 10
 	for i = 1, count do
@@ -157,7 +155,11 @@ local function updateBullet(index)
 	elseif not bullet.hidden then
 		collision.check(hc.collisions(bullet), 'enemy', function(enemy)
 			if enemy.health <= 0 then
-				drops.spawnPoint(enemy)
+				if enemy.isBoss then
+					for i = 1, 5 do
+						drops.spawnPoint({x = (enemy.x - grid * 3) + grid * 6 * math.random(), y = enemy.y})
+					end
+				else drops.spawnPoint(enemy) end
 				explosions.spawn(enemy, false, true, true)
 				enemy.x = -gameWidth
 				enemy.y = -gameHeight
@@ -224,7 +226,8 @@ local function updateBomb(index)
 				enemy.y = -gameHeight
 			else
 				explosions.spawn({x = enemy.x, y = enemy.y})
-				enemy.health = enemy.health - .5
+				if enemy.isBoss then enemy.health = enemy.health - .2
+				else enemy.health = enemy.health - 1 end
 			end
 		end)
 		collision.check(hc.collisions(bomb), 'bullet', function(bullet)
@@ -249,29 +252,12 @@ local function updateBombing()
 		player.bombs = player.bombs - 1
 	end
 	for i, v in ipairs(player.bombItems) do updateBomb(i) end
-
 end
 
 function player.update()
-	local yOff = 4.5
-	if controls.focus then
-		if player.sideOffset > 10 then
-			player.sideOffset = player.sideOffset - 3
-			player.sideY = player.sideY - yOff
-		end
-	else
-		if player.sideOffset < 30 then
-			player.sideOffset = player.sideOffset + 3
-			player.sideY = player.sideY + yOff
-		else
-			player.sideOffset = 30
-			player.sideY = grid
-		end
-	end
 	updateMove()
 	updateShoot()
 	updateBombing()
-	player.sideRotation = player.sideRotation - .015
 	player.clock = player.clock + 1
 	if player.invulnerableClock > 0 then
 		if player.invulnerableClock > 60 * 3 then

@@ -1,5 +1,6 @@
 math.tau = math.pi * 2
 hc = require('lib/hc')
+bitser = require('lib/bitser')
 winWidth = 240
 winHeight = 320
 gameScale = 3
@@ -22,6 +23,7 @@ colors = {
 }
 gameClock = 0
 highScore = 0
+scoreTable = false
 currentScore = 0
 currentGraze = 0
 paused = false
@@ -31,7 +33,7 @@ aniTime = 25
 dt = 0
 frameLimit = 1 / 60
 goingToBossClock = 0
-goingToBossLimit = 60 * 3.5
+goingToBossLimit = 60 * 3
 clearedStageClock = 0
 clearedStageLimit = 60 * 5
 font = love.graphics.newFont('fonts/Ibara.ttf', 7)
@@ -61,7 +63,9 @@ currentStage = 1
 paused = false
 isFullscreen = false
 isTate = false
+nextBoss = false
 
+require('sound')
 require('start')
 require('controls')
 require('background')
@@ -110,6 +114,7 @@ function startGame()
 	graze.load()
 	explosions.load()
 	loadChrome()
+	sound.playBgm('level2')
 end
 
 function startStencil(mask)
@@ -122,6 +127,22 @@ function endStencil()
   love.graphics.setStencilTest()
 end
 
+function recordScore()
+	table.insert(scoreTable, currentScore)
+	local scoreStr = bitser.dumps(scoreTable)
+	love.filesystem.write('score.lua', scoreStr)
+end
+
+local function loadScores()
+	local scoreData = love.filesystem.read('score.lua')
+	if scoreData then
+		scoreTable = bitser.loads(scoreData)
+		table.sort(scoreTable, function(a, b)
+		 return a > b
+		end)
+	else scoreTable = {} end
+end
+
 function love.load()
   love.window.setTitle('凍結塵芥')
   container = love.graphics.newCanvas(winWidth, winHeight)
@@ -131,8 +152,10 @@ function love.load()
   love.graphics.setLineWidth(1)
   font:setFilter('nearest', 'nearest')
   love.graphics.setFont(font)
+	loadScores()
   setupColors()
   loadControls()
+	sound.load()
 	if started then startGame()
 	else start.load() end
 end
@@ -144,11 +167,11 @@ function love.update(d)
 		if not paused then
 		  background.update()
 			drops.update()
-		  player.update()
+		  if not gameOver then player.update() end
 		  stage.update()
 			graze.update()
 		  explosions.update()
-		  collision.update()
+		  if not gameOver then collision.update() end
 		end
 		updateChrome()
 	else start.update() end
@@ -166,7 +189,7 @@ function love.draw()
 	  background.draw()
 		drops.draw()
 		drawEnemies()
-	  player.draw()
+	  if not gameOver then player.draw() end
 	  stage.draw()
 		player.drawBullets()
 		graze.draw()

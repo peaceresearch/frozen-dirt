@@ -28,7 +28,10 @@ local function updateKeyboard()
 	elseif love.keyboard.isDown('right') then controls.right = true end
 	if love.keyboard.isDown('up') then controls.up = true
 	elseif love.keyboard.isDown('down') then controls.down = true end
-	if love.keyboard.isDown('z') then controls.shoot = true end
+	if love.keyboard.isDown('z') then
+		controls.shoot = true
+		if gameOver then love.event.quit('restart') end
+	end
 	if love.keyboard.isDown('x') then controls.bomb = true end
 	if love.keyboard.isDown('lshift') or love.keyboard.isDown('rshift') then controls.focus = true end
 	if love.keyboard.isDown('r') then love.event.quit('restart') end

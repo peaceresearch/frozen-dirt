@@ -1,16 +1,22 @@
 collision = {}
 
 local function killPlayer()
-	if player.lives == 999 then
+	if player.lives == 0 then
+		explosions.spawn(player, true, true)
+		strResult = 'You Lose'
+		gameOver = true
+		sound.playSfx('gameover')
+		sound.stopBgm()
+		recordScore()
 	elseif player.invulnerableClock <= 0 then
 		stage.killBullets = true
 		explosions.spawn(player, true, true)
 		player.dieX = player.x
 		player.dieY = player.y
 		player.invulnerableClock = 60 * 4
-		stage.killBullets = true
-		stage.killBulletTimer = 60 * 2
 		player.lives = player.lives - 1
+		player.power = player.power - 1
+		if player.power <= 1 then player.power = 1 end
 	end
 end
 
@@ -27,9 +33,12 @@ end
 collision.update = function()
 	if player.invulnerableClock <= 0 then
 		collision.check(hc.collisions(player.collider), 'bullet', function(bullet)
-			-- if bullet.visible then killPlayer() end
+			if bullet.visible then killPlayer() end
 		end)
-		collision.check(hc.collisions(player.collider), 'enemy', killPlayer)
+		collision.check(hc.collisions(player.collider), 'enemy', function(enemy)
+			if not enemy.isBoss then enemy.y = gameHeight * 2 end
+			killPlayer()
+		end)
 		collision.check(hc.collisions(player.grazeCollider), 'bullet', function(bullet)
 			if bullet.visible and not bullet.grazed then
 				bullet.grazed = true

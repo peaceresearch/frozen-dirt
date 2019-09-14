@@ -19,6 +19,7 @@ function graze.spawn(pos, angle)
 		},
 	}
 	table.insert(graze.graze, grazeItem)
+	sound.playSfx('graze')
 end
 
 function graze.update()

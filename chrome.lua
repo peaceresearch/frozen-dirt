@@ -182,7 +182,7 @@ end
 
 local function drawStages()
 	local function goingToBoss()
-		local str = 'A Baka Approaches'
+		local str = 'An Idiot Approaches'
 		local x = gameX + gameWidth / 2 - #str * 8 / 2
 		local y = gameHeight / 2 - 4
 		drawLabel(str, x, y)
@@ -207,7 +207,7 @@ local function drawStages()
 		drawLabel(next, x - #next * 8 / 2, gameHeight / 5 * 3)
 	end
 	if goingToBossClock > 0 then goingToBoss() end
-	if clearedStageClock > 0 then clearedStage() end
+	-- if clearedStageClock > 0 then clearedStage() end
 	-- clearedStage()
 end
 
@@ -219,8 +219,18 @@ local function drawPaused()
 	end
 end
 
+strResult = ''
+
+local function drawGameOver()
+	local str = 'Game Over'
+	local strReturn = 'Shoot to return to title'
+	drawLabel(str, gameWidth / 2 - #str * 8 / 2, gameHeight / 2 - 4 - 12, 'blueLight')
+	drawLabel(strResult, gameWidth / 2 - #strResult * 8 / 2, gameHeight / 2 - 4)
+	drawLabel(strReturn, gameWidth / 2 - #strReturn * 8 / 2, gameHeight / 2 - 4 + 12)
+end
+
 local function drawPregame()
-	local str = 'Going into stage ' .. currentStage
+	local str = 'Flying into stage ' .. currentStage
 	drawLabel(str, gameWidth / 2 - #str * 8 / 2, gameHeight / 2 - 4, 'blueLight')
 end
 
@@ -234,5 +244,6 @@ function drawChrome()
 	drawPower()
   drawBombs()
   if bossHealth > 0 then drawBoss() end
-	if pregameClock > 0 then drawPregame() end
+	if gameOver then drawGameOver()
+	elseif pregameClock > 0 then drawPregame() end
 end
